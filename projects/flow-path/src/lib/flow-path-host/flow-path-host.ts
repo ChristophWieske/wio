@@ -32,13 +32,12 @@ export interface Obstacle extends Position {
 export class FlowPathHost {
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
   private readonly _positions = signal<Record<string, Position>>({});
-  private readonly _obstacles = signal<Record<string, Obstacle>>({});
+  private readonly _obstacles = signal<Record<string, Obstacle[]>>({});
   private readonly _rect = signal<DOMRect | null>(null, { equal: rectEqual });
 
   readonly pathFinder = inject(PathFinderFactory).createPathFinder();
   readonly positions = this._positions.asReadonly();
   readonly rect = this._rect.asReadonly();
-  readonly obstacles = this._obstacles.asReadonly();
   readonly paths = contentChildren(FlowPath, { descendants: true });
   readonly weightsChanged = output();
 
@@ -78,9 +77,9 @@ export class FlowPathHost {
 
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          const obstacles = Object.values(this._obstacles()).filter((obs) =>
-            isWithin({ x, y }, obs),
-          );
+          const obstacles = Object.values(this._obstacles())
+            .flatMap((x) => x)
+            .filter((obs) => isWithin({ x, y }, obs));
           if (obstacles.length === 0) {
             this.pathFinder.setWeight(x, y, 1);
             continue;
@@ -117,12 +116,12 @@ export class FlowPathHost {
     });
   }
 
-  setObstacle(id: string, obstacle: Obstacle | undefined): void {
-    this._obstacles.update((obstacles) => {
-      const copy = { ...obstacles };
+  setObstacle(id: string, obstacles: Obstacle[] | undefined): void {
+    this._obstacles.update((obs) => {
+      const copy = { ...obs };
 
-      if (obstacle) {
-        copy[id] = obstacle;
+      if (obstacles && obstacles.length > 0) {
+        copy[id] = obstacles;
       } else {
         delete copy[id];
       }
