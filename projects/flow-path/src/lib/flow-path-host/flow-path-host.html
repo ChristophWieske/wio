@@ -1,0 +1,6 @@
+<svg>
+  @for (path of paths(); track path) {
+    <ng-container [ngTemplateOutlet]="path.pathTemplate()"/>
+  }
+</svg>
+<ng-content></ng-content>

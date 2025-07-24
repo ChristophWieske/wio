@@ -1,0 +1,11 @@
+<svg>
+  <!--
+  Note:
+  This svg is never to be seen as the host element itself is display:none.
+  Its only purpose is to provide a context in which the angular compiler does not complain about a path element
+  which is defined in the template below to be projected to the flow-path-host.
+  -->
+  <ng-template #pathTemplate>
+    <path [attr.d]="path()"></path>
+  </ng-template>
+</svg>

@@ -1,0 +1,10 @@
+:host {
+  display: none;
+}
+
+path {
+  stroke: black;
+  stroke-width: 2;
+  transition: d 500ms ease-in-out;
+  fill: transparent;
+}

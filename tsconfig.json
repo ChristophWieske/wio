@@ -13,7 +13,15 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    "paths": {
+      "flow-path": [
+        "./dist/flow-path"
+      ],
+      "wio": [
+        "./dist/wio"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
@@ -22,5 +30,25 @@
     "typeCheckHostBindings": true,
     "strictTemplates": true
   },
-  "files": []
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/wio/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/wio/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/wio-test-app/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/wio-test-app/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/flow-path/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/flow-path/tsconfig.spec.json"
+    }
+  ]
 }
