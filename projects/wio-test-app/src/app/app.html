@@ -1,9 +1,13 @@
 <wio-flow-path-host>
   <div class="container">
     <wio-flow-path-node id="start" />
-    <div class="obstacle" wioObstacle></div>
-    <div class="obstacle" wioObstacle></div>
-    <div class="obstacle" wioObstacle></div>
+    <div class="obstacle" wioObstacle [brimWidth]="10"></div>
+    <div class="obstacle" wioObstacle [brimWidth]="10"></div>
+    <div class="obstacle" wioObstacle [brimWidth]="10"></div>
+    <div class="obstacle" wioObstacle [brimWidth]="10"></div>
+    <div class="obstacle" wioObstacle [brimWidth]="10"></div>
+    <div class="obstacle" wioObstacle [brimWidth]="10"></div>
+    <div class="obstacle" wioObstacle [brimWidth]="10"></div>
     <wio-flow-path-node id="end" />
     <wio-flow-path [positions]="['start', 'end']" />
   </div>
