@@ -27,14 +27,18 @@ interface GridNode {
    */
   parent?: GridNode;
   /**
-   * An indicator if this node has already been checked.
-   */
-  closed?: boolean;
-  /**
    * An indicator if this node has already been evaluated and waits to be checked.
    */
   open?: boolean;
 }
+
+const DIRECTION_VECTORS = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+];
+const COSTS_FOR_TURN = 10;
 
 export class AStar implements PathFinder {
   grid: GridNode[][] = [];
@@ -49,12 +53,12 @@ export class AStar implements PathFinder {
   }
 
   setDimensions(width: number, height: number): void {
-    console.log('Setting dimensions');
     this.grid = Array.from({ length: Math.ceil(width) }, (_, x) =>
       Array.from({ length: Math.ceil(height) }, (_, y) => ({
         weight: 1,
         x,
         y,
+        turns: 0,
       })),
     );
   }
@@ -65,7 +69,10 @@ export class AStar implements PathFinder {
     x2: number,
     y2: number,
   ): { x: number; y: number }[] | null {
+    const beforeClear = performance.now();
     this.clearGrid();
+    const afterClear = performance.now();
+    console.log('clearing', afterClear - beforeClear);
 
     const startNode = this.grid[x1][y1];
     const endNode = this.grid[x2][y2];
@@ -77,27 +84,21 @@ export class AStar implements PathFinder {
     const openList = new SortedList<GridNode>((a, b) => a.f! - b.f!);
     openList.push(startNode);
 
-    let maxOpenListSize = 0;
     while (openList.length > 0) {
-      maxOpenListSize = Math.max(maxOpenListSize, openList.length);
       const current = openList.shift()!;
-      current.closed = true;
       current.open = false;
 
       if (current === endNode) {
-        console.log('maxOpenListSize', maxOpenListSize);
         return reconstructPath(current);
       }
 
-      for (const [dx, dy] of [
-        [0, -1],
-        [1, 0],
-        [0, 1],
-        [-1, 0],
-      ]) {
+      for (const [dx, dy] of DIRECTION_VECTORS) {
         const nx = current.x + dx;
         const ny = current.y + dy;
-        const nextNode = this.grid[nx]?.[ny];
+        if (this.grid.length <= nx) {
+          continue;
+        }
+        const nextNode = this.grid[nx][ny];
 
         if (!nextNode) {
           continue;
@@ -114,23 +115,39 @@ export class AStar implements PathFinder {
         const h = heuristic(nextNode, endNode);
         const f = g + h;
 
-        if (nextNode.f !== undefined && nextNode.f < f) {
+        if (nextNode.f === undefined) {
+          nextNode.open = true;
+          nextNode.parent = current;
+          nextNode.g = g;
+          nextNode.h = h;
+          nextNode.f = f;
+          openList.push(nextNode);
           continue;
         }
 
-        const skipPush = nextNode.open;
-
-        nextNode.open = true;
-        nextNode.parent = current;
-        nextNode.g = g;
-        nextNode.h = h;
-        nextNode.f = f;
-
-        if (skipPush) {
-          openList.update(nextNode);
-        } else {
-          openList.push(nextNode);
+        if (nextNode.f < f) {
+          continue;
         }
+
+        if (nextNode.f > f) {
+          nextNode.parent = current;
+          nextNode.g = g;
+          nextNode.h = h;
+          nextNode.f = f;
+          openList.update(nextNode);
+          continue;
+        }
+
+        openList.push({
+          x: nx,
+          y: ny,
+          weight: nextNode.weight,
+          open: true,
+          parent: current,
+          f,
+          g,
+          h,
+        });
       }
     }
 
@@ -138,16 +155,15 @@ export class AStar implements PathFinder {
   }
 
   private clearGrid(): void {
-    this.grid
-      .flatMap((x) => x)
-      .forEach((node) => {
-        delete node.g;
-        delete node.h;
-        delete node.f;
-        delete node.parent;
-        delete node.open;
-        delete node.closed;
-      });
+    this.grid.forEach((row) =>
+      row.forEach((node) => {
+        node.g = undefined;
+        node.h = undefined;
+        node.f = undefined;
+        node.parent = undefined;
+        node.open = undefined;
+      }),
+    );
   }
 }
 
@@ -168,12 +184,34 @@ function costForDirectionChange(
     return 0;
   }
 
-  return 0.1;
+  return COSTS_FOR_TURN;
+}
+
+function isChangingDirection(
+  node: GridNode,
+  potentialParent: GridNode,
+): boolean {
+  const grandfather = potentialParent.parent;
+  if (!grandfather) {
+    return false;
+  }
+
+  if (grandfather.x === node.x) {
+    return false;
+  }
+
+  if (grandfather.y === node.y) {
+    return false;
+  }
+
+  return true;
 }
 
 function heuristic(from: GridNode, to: GridNode): number {
-  // For now: Manhattan without anything extra weightend.
-  return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
+  // If the nodes are not on the same x or y coordinate it will take the path at least one turn to get to the target.
+  // As turns are weighted in this opinionated astar algorithm we add that to the heuristics as well.
+  const turnCosts = from.x !== to.x && from.y !== to.y ? COSTS_FOR_TURN : 0;
+  return Math.abs(from.x - to.x) + Math.abs(from.y - to.y) + turnCosts;
 }
 
 function reconstructPath(node: GridNode): { x: number; y: number }[] {
