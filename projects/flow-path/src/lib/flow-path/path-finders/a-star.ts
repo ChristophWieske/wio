@@ -95,7 +95,7 @@ export class AStar implements PathFinder {
       for (const [dx, dy] of DIRECTION_VECTORS) {
         const nx = current.x + dx;
         const ny = current.y + dy;
-        if (this.grid.length <= nx) {
+        if (nx < 0 || this.grid.length <= nx) {
           continue;
         }
         const nextNode = this.grid[nx][ny];
