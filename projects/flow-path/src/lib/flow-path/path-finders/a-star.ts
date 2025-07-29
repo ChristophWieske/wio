@@ -13,23 +13,23 @@ interface GridNode {
   /**
    * The estimated costs to come from this node to the target node.
    */
-  h?: number;
+  h: number;
   /**
    * The actual costs that was needed to come here from the start node.
    */
-  g?: number;
+  g: number;
   /**
    * The combined costs of g and h.
    */
-  f?: number;
+  f: number;
   /**
    * The node from which we came here.
    */
   parent?: GridNode;
   /**
-   * An indicator if this node has already been evaluated and waits to be checked.
+   * The run id this node was evaluated last.
    */
-  open?: boolean;
+  runId: number;
 }
 
 const DIRECTION_VECTORS = [
@@ -41,6 +41,7 @@ const DIRECTION_VECTORS = [
 const COSTS_FOR_TURN = 10;
 
 export class AStar implements PathFinder {
+  runId = 0;
   grid: GridNode[][] = [];
 
   setWeight(x: number, y: number, weight: number): void {
@@ -58,7 +59,10 @@ export class AStar implements PathFinder {
         weight: 1,
         x,
         y,
-        turns: 0,
+        g: 0,
+        h: 0,
+        f: 0,
+        runId: 0,
       })),
     );
   }
@@ -69,10 +73,7 @@ export class AStar implements PathFinder {
     x2: number,
     y2: number,
   ): { x: number; y: number }[] | null {
-    const beforeClear = performance.now();
-    this.clearGrid();
-    const afterClear = performance.now();
-    console.log('clearing', afterClear - beforeClear);
+    this.runId++;
 
     const startNode = this.grid[x1][y1];
     const endNode = this.grid[x2][y2];
@@ -80,13 +81,12 @@ export class AStar implements PathFinder {
     startNode.g = 0;
     startNode.h = heuristic(startNode, endNode);
     startNode.f = startNode.h;
-    startNode.open = true;
+    startNode.runId = this.runId;
     const openList = new SortedList<GridNode>((a, b) => a.f! - b.f!);
     openList.push(startNode);
 
     while (openList.length > 0) {
       const current = openList.shift()!;
-      current.open = false;
 
       if (current === endNode) {
         return reconstructPath(current);
@@ -115,12 +115,12 @@ export class AStar implements PathFinder {
         const h = heuristic(nextNode, endNode);
         const f = g + h;
 
-        if (nextNode.f === undefined) {
-          nextNode.open = true;
+        if (nextNode.runId !== this.runId) {
           nextNode.parent = current;
           nextNode.g = g;
           nextNode.h = h;
           nextNode.f = f;
+          nextNode.runId = this.runId;
           openList.push(nextNode);
           continue;
         }
@@ -142,28 +142,16 @@ export class AStar implements PathFinder {
           x: nx,
           y: ny,
           weight: nextNode.weight,
-          open: true,
           parent: current,
           f,
           g,
           h,
+          runId: this.runId,
         });
       }
     }
 
     return null;
-  }
-
-  private clearGrid(): void {
-    this.grid.forEach((row) =>
-      row.forEach((node) => {
-        node.g = undefined;
-        node.h = undefined;
-        node.f = undefined;
-        node.parent = undefined;
-        node.open = undefined;
-      }),
-    );
   }
 }
 
@@ -185,26 +173,6 @@ function costForDirectionChange(
   }
 
   return COSTS_FOR_TURN;
-}
-
-function isChangingDirection(
-  node: GridNode,
-  potentialParent: GridNode,
-): boolean {
-  const grandfather = potentialParent.parent;
-  if (!grandfather) {
-    return false;
-  }
-
-  if (grandfather.x === node.x) {
-    return false;
-  }
-
-  if (grandfather.y === node.y) {
-    return false;
-  }
-
-  return true;
 }
 
 function heuristic(from: GridNode, to: GridNode): number {
