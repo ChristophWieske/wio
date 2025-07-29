@@ -58,20 +58,16 @@ export class FlowPathNode {
     let latestId: string | undefined;
     effect(() => {
       if (this.id() !== latestId && latestId !== undefined) {
-        this.flowPathHost.setObstacle(latestId, undefined);
+        this.flowPathHost.setPosition(latestId, undefined);
       }
       latestId = this.id();
 
       const rect = normalizedRect();
       if (!rect) {
-        this.flowPathHost.setObstacle(this.id(), undefined);
+        this.flowPathHost.setPosition(this.id(), undefined);
         return;
       }
 
-      console.log(this.id(), rect, {
-        x: rect.x + rect.width / 2,
-        y: rect.y + rect.height / 2,
-      });
       this.flowPathHost.setPosition(this.id(), {
         x: rect.x + rect.width / 2,
         y: rect.y + rect.height / 2,
@@ -80,7 +76,7 @@ export class FlowPathNode {
 
     inject(DestroyRef).onDestroy(() => {
       observer.disconnect();
-      this.flowPathHost.setObstacle(this.id(), undefined);
+      this.flowPathHost.setPosition(this.id(), undefined);
     });
   }
 }
