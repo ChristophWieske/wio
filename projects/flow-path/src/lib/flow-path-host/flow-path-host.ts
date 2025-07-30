@@ -1,7 +1,6 @@
-import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
-  contentChildren,
+  computed,
   DestroyRef,
   effect,
   ElementRef,
@@ -9,7 +8,6 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FlowPath } from '../../public-api';
 import {
   PathFinderFactory,
   Position,
@@ -25,7 +23,7 @@ export interface Obstacle extends Position {
 
 @Component({
   selector: 'wio-flow-path-host',
-  imports: [NgTemplateOutlet],
+  imports: [],
   templateUrl: './flow-path-host.html',
   styleUrl: './flow-path-host.css',
 })
@@ -33,12 +31,15 @@ export class FlowPathHost {
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
   private readonly _positions = signal<Record<string, Position>>({});
   private readonly _obstacles = signal<Record<string, Obstacle[]>>({});
+  private readonly _paths = signal<Record<string, string>>({});
   private readonly _rect = signal<DOMRect | null>(null, { equal: rectEqual });
 
   readonly pathFinder = inject(PathFinderFactory).createPathFinder();
   readonly positions = this._positions.asReadonly();
   readonly rect = this._rect.asReadonly();
-  readonly paths = contentChildren(FlowPath, { descendants: true });
+  readonly paths = computed(() =>
+    Object.entries(this._paths()).map(([id, data]) => ({ id, data })),
+  );
   readonly weightsChanged = output();
 
   constructor() {
@@ -48,7 +49,7 @@ export class FlowPathHost {
   }
 
   private maintainRect() {
-    const observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver(() => {
       this._rect.set(this.host.getBoundingClientRect());
     });
     observer.observe(this.host);
@@ -122,6 +123,21 @@ export class FlowPathHost {
 
       if (obstacles && obstacles.length > 0) {
         copy[id] = obstacles;
+      } else {
+        delete copy[id];
+      }
+
+      return copy;
+    });
+  }
+
+  setPath(id: string, path: string | undefined): void {
+    this._paths.update((paths) => {
+      const copy = { ...paths };
+
+      if (path) {
+        console.log('Path changed', copy[id], path);
+        copy[id] = path;
       } else {
         delete copy[id];
       }

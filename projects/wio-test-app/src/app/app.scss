@@ -23,3 +23,31 @@
 #end {
   transform: translateY(10px);
 }
+
+path {
+  transition: stroke-width 200ms ease;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke: linear-gradient(
+    to right,
+    #e5405e 0%,
+    #e5405e 15%,
+    rgba(46, 2014, 113, 0.8) 30%,
+    rgba(39, 174, 96, 0.3) 45%,
+    #3fffa2 60%,
+    #1a9be0 73%,
+    #ba68ed 100%
+  );
+}
+
+path:hover {
+  stroke-width: 12;
+}
+
+.test {
+  offset-path: url(#a);
+  width: 20px;
+  height: 20px;
+  background: pink;
+  offset-distance: 50%;
+}

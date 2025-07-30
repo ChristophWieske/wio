@@ -37,6 +37,7 @@ export class FlowPathNode {
       () => {
         const obsRect = nodeRect();
         const hostRect = this.flowPathHost.rect();
+        console.log('Hello World', obsRect, hostRect);
 
         if (!obsRect || !hostRect) {
           return null;
@@ -69,8 +70,8 @@ export class FlowPathNode {
       }
 
       this.flowPathHost.setPosition(this.id(), {
-        x: rect.x + rect.width / 2,
-        y: rect.y + rect.height / 2,
+        x: Math.round(rect.x + rect.width / 2),
+        y: Math.round(rect.y + rect.height / 2),
       });
     });
 

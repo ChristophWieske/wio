@@ -9,6 +9,14 @@
     <div class="obstacle" wioObstacle [brimWidth]="10"></div>
     <div class="obstacle" wioObstacle [brimWidth]="10"></div>
     <wio-flow-path-node id="end" />
-    <wio-flow-path [positions]="['start', 'end']" />
   </div>
+
+  <svg:path
+    wio-flow-path
+    [positions]="['start', 'end']"
+    (click)="activate()"
+    id="a"
+  />
 </wio-flow-path-host>
+
+<div class="test"></div>

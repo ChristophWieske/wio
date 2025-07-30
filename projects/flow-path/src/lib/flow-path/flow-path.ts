@@ -4,67 +4,84 @@ import {
   effect,
   inject,
   input,
+  OnDestroy,
   signal,
-  TemplateRef,
-  viewChild,
+  Signal,
 } from '@angular/core';
 import { FlowPathHost } from '../../public-api';
 import { Position } from './path-finders/path-finder';
 
 @Component({
-  selector: 'wio-flow-path',
+  selector: 'svg:path [wio-flow-path]',
   imports: [],
   templateUrl: './flow-path.html',
   styleUrl: './flow-path.css',
+  host: {
+    '[attr.d]': 'path()',
+  },
 })
-export class FlowPath {
+export class FlowPath implements OnDestroy {
+  static counter = 0;
+  private readonly id = `path-${++FlowPath.counter}`;
   private readonly flowPathHost = inject(FlowPathHost);
+  private queued = false;
 
   readonly positions = input.required<string[]>();
-  readonly pathTemplate = viewChild<TemplateRef<unknown>>('pathTemplate');
-
+  readonly nodes = this.prepareNodes();
   readonly path = signal('');
 
   constructor() {
     this.calculatePathOnChange();
   }
 
-  private calculatePathOnChange(): void {
-    const positions = computed(
-      () => this.positions().map((x) => this.flowPathHost.positions()[x]),
-      { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
-    );
-
-    effect(() => this.calculatePath(positions()));
-
-    this.flowPathHost.weightsChanged.subscribe(() =>
-      this.calculatePath(positions()),
-    );
+  ngOnDestroy() {
+    this.flowPathHost.setPath(this.id, undefined);
   }
 
-  private calculatePath(positions: Position[]): void {
+  private calculatePathOnChange(): void {
+    effect(() => {
+      this.nodes();
+      this.queueCalculatePath();
+    });
+
+    this.flowPathHost.weightsChanged.subscribe(() => this.queueCalculatePath());
+  }
+
+  private queueCalculatePath(): void {
+    if (this.queued) {
+      return;
+    }
+
+    this.queued = true;
+    queueMicrotask(() => {
+      this.queued = false;
+      this.calculatePath();
+    });
+  }
+
+  private calculatePath(): void {
+    const nodes = this.nodes();
     const combinedPath: { x: number; y: number }[] = [];
 
     const started = performance.now();
-    for (let i = 1; i < positions.length; i++) {
-      const from = positions[i - 1];
-      const to = positions[i];
+    for (let i = 1; i < nodes.length; i++) {
+      const from = nodes[i - 1];
+      const to = nodes[i];
 
       if (!from || !to) {
+        this.flowPathHost.setPath(this.id, undefined);
         return;
       }
 
       const path = this.flowPathHost.pathFinder.findPath(
-        Math.round(from.x),
-        Math.round(from.y),
-        Math.round(to.x),
-        Math.round(to.y),
+        from.x,
+        from.y,
+        to.x,
+        to.y,
       );
 
       if (path) {
         combinedPath.push(...path);
-      } else {
-        console.log('Shit');
       }
     }
 
@@ -73,6 +90,18 @@ export class FlowPath {
     const nextPath =
       'M ' +
       combinedPath.map((position) => `${position.x} ${position.y}`).join(' L ');
+    //this.flowPathHost.setPath(this.id, nextPath);
     this.path.set(nextPath);
+  }
+
+  private prepareNodes(): Signal<Position[]> {
+    return computed(
+      () => {
+        const a = this.positions().map((x) => this.flowPathHost.positions()[x]);
+        console.log(a);
+        return a;
+      },
+      { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+    );
   }
 }
