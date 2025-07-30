@@ -183,12 +183,20 @@ function heuristic(from: GridNode, to: GridNode): number {
 }
 
 function reconstructPath(node: GridNode): { x: number; y: number }[] {
-  const nodes: { x: number; y: number }[] = [];
+  const nodes: { x: number; y: number }[] = [{ x: node.x, y: node.y }];
 
   let currentNode: GridNode | undefined = node;
+  let latestTurn: GridNode = node;
   while (currentNode) {
-    nodes.push({ x: currentNode.x, y: currentNode.y });
-    currentNode = currentNode.parent;
+    const parent: GridNode | undefined = currentNode?.parent;
+    if (!parent) {
+      nodes.push({ x: currentNode.x, y: currentNode.y });
+    } else if (parent.x !== latestTurn.x && parent.y !== latestTurn.y) {
+      nodes.push({ x: parent.x, y: parent.y });
+      latestTurn = parent;
+    }
+
+    currentNode = parent;
   }
 
   return nodes;
