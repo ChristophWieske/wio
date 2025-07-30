@@ -82,11 +82,11 @@ export class AStar implements PathFinder {
     startNode.h = heuristic(startNode, endNode);
     startNode.f = startNode.h;
     startNode.runId = this.runId;
-    const openList = new SortedList<GridNode>((a, b) => a.f! - b.f!);
+    const openList = new SortedList<GridNode>((a) => a.f);
     openList.push(startNode);
 
     while (openList.length > 0) {
-      const current = openList.shift()!;
+      const current = openList.pop()!;
 
       if (current === endNode) {
         return reconstructPath(current);

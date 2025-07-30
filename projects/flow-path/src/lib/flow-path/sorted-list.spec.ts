@@ -6,16 +6,16 @@ interface TestObject {
 
 describe('SortedList', () => {
   it('Should always stay sorted', () => {
-    const sortedList = new SortedList<TestObject>((a, b) => a.value - b.value);
+    const sortedList = new SortedList<TestObject>((a) => a.value);
     sortedList.push({ value: 3 });
     sortedList.push({ value: 1 });
     sortedList.push({ value: 7 });
     sortedList.push({ value: 5 });
 
-    expect(sortedList.shift()?.value).toBe(1);
-    expect(sortedList.shift()?.value).toBe(3);
-    expect(sortedList.shift()?.value).toBe(5);
-    expect(sortedList.shift()?.value).toBe(7);
-    expect(sortedList.shift()).toBeUndefined();
+    expect(sortedList.pop()?.value).toBe(1);
+    expect(sortedList.pop()?.value).toBe(3);
+    expect(sortedList.pop()?.value).toBe(5);
+    expect(sortedList.pop()?.value).toBe(7);
+    expect(sortedList.pop()).toBeUndefined();
   });
 });

@@ -4,33 +4,45 @@
 export class SortedList<T> {
   private readonly items: T[] = [];
 
-  constructor(private readonly sortCallback: (a: T, b: T) => number) {}
+  constructor(private readonly valueSelector: (a: T) => number) {}
 
   push(item: T): void {
+    const index = this.findIndex(item);
+    this.items.splice(index, 0, item);
+  }
+
+  update(item: T): void {
+    const index = this.findIndex(item);
+    const oldIndex = this.items.indexOf(item);
+
+    if (index === oldIndex || oldIndex === -1) {
+      return;
+    }
+
+    this.items.splice(oldIndex, 1);
+    this.items.splice(index, 0, item);
+  }
+
+  pop(): T | undefined {
+    return this.items.pop();
+  }
+
+  get length() {
+    return this.items.length;
+  }
+
+  private findIndex(item: T): number {
     let low = 0;
     let high = this.items.length;
 
     while (low < high) {
       const mid = (low + high) >>> 1;
-      const comparision = this.sortCallback(item, this.items[mid]);
-      if (comparision > 0) low = mid + 1;
+      const comparison =
+        this.valueSelector(this.items[mid]) - this.valueSelector(item);
+      if (comparison > 0) low = mid + 1;
       else high = mid;
     }
 
-    this.items.splice(low, 0, item);
-  }
-
-  update(item: T): void {
-    const oldItem = this.items.indexOf(item);
-    this.items.splice(oldItem, 1);
-    this.push(item);
-  }
-
-  shift(): T | undefined {
-    return this.items.shift();
-  }
-
-  get length() {
-    return this.items.length;
+    return low;
   }
 }
