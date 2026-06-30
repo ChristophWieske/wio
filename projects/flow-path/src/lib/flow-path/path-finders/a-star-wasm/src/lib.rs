@@ -178,26 +178,6 @@ fn get_node_index(x: u16, y: u16, width: u16) -> usize {
     y as usize * width as usize + x as usize
 }
 
-fn cost_for_direction_change(
-    from: &Candidate,
-    to: &GridNode,
-    candidates: &Vec<Candidate>,
-    nodes: &Vec<GridNode>,
-) -> u32 {
-    match from.parent_index {
-        Some(grandfather_index) => {
-            let grandfather = &candidates[grandfather_index];
-            let grandfather_node = nodes[grandfather.node_index];
-            if grandfather_node.x == to.x || grandfather_node.y == to.y {
-                return 0;
-            }
-
-            return COST_FOR_TURN;
-        }
-        None => return 0,
-    };
-}
-
 fn reconstruct_path(
     candidate: &Candidate,
     candidates: &Vec<Candidate>,
@@ -393,84 +373,6 @@ mod tests {
         let current_direction = (0, 1);
         let result = heuristic(&from_node, &target_node, Some(current_direction));
         assert_eq!(result, 12);
-    }
-
-    #[test]
-    fn cost_for_direction_change_test_1() {
-        let nodes = vec![
-            GridNode {
-                x: 0,
-                y: 0,
-                weight: 1,
-            },
-            GridNode {
-                x: 1,
-                y: 0,
-                weight: 1,
-            },
-        ];
-        let all_candidates = vec![
-            Candidate {
-                node_index: 0,
-                parent_index: None,
-                index: 0,
-                direction: None,
-            },
-            Candidate {
-                node_index: 1,
-                parent_index: Some(0),
-                index: 1,
-                direction: Some((1, 0)),
-            },
-        ];
-
-        let target_node = GridNode {
-            x: 1,
-            y: 1,
-            weight: 1,
-        };
-        let result =
-            cost_for_direction_change(&all_candidates[1], &target_node, &all_candidates, &nodes);
-        assert_eq!(result, COST_FOR_TURN);
-    }
-
-    #[test]
-    fn cost_for_direction_change_test_2() {
-        let nodes = vec![
-            GridNode {
-                x: 2,
-                y: 0,
-                weight: 1,
-            },
-            GridNode {
-                x: 3,
-                y: 0,
-                weight: 1,
-            },
-        ];
-        let all_candidates = vec![
-            Candidate {
-                node_index: 0,
-                parent_index: None,
-                index: 0,
-                direction: None,
-            },
-            Candidate {
-                node_index: 1,
-                parent_index: Some(0),
-                index: 1,
-                direction: Some((1, 0)),
-            },
-        ];
-
-        let target_node = GridNode {
-            x: 3,
-            y: 1,
-            weight: 1,
-        };
-        let result =
-            cost_for_direction_change(&all_candidates[1], &target_node, &all_candidates, &nodes);
-        assert_eq!(result, COST_FOR_TURN);
     }
 
     #[test]
