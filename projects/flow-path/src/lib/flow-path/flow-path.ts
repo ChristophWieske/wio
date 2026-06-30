@@ -73,12 +73,10 @@ export class FlowPath implements OnDestroy {
         return;
       }
 
-      const path = this.flowPathHost.pathFinder.findPath(
-        from.x,
-        from.y,
-        to.x,
-        to.y,
-      );
+      const findStart = performance.now();
+      const path = this.flowPathHost.pathFinder.value()?.findPath(from.x, from.y, to.x, to.y);
+      const findEnd = performance.now();
+      console.log('Needed ', findEnd - findStart, "for ", path);
 
       if (path) {
         combinedPath.push(...path);
@@ -86,7 +84,6 @@ export class FlowPath implements OnDestroy {
     }
 
     const end = performance.now();
-    console.log('Calculated path', end - started);
     const nextPath =
       'M ' +
       combinedPath.map((position) => `${position.x} ${position.y}`).join(' L ');
@@ -98,7 +95,6 @@ export class FlowPath implements OnDestroy {
     return computed(
       () => {
         const a = this.positions().map((x) => this.flowPathHost.positions()[x]);
-        console.log(a);
         return a;
       },
       { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },

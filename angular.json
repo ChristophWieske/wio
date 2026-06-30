@@ -1,34 +1,40 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
+  "cli": {
+    "packageManager": "npm",
+    "analytics": false
+  },
   "newProjectRoot": "projects",
   "projects": {
-    "wio-test-app": {
+    "test-app": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
           "style": "scss"
         }
       },
-      "root": "projects/wio-test-app",
-      "sourceRoot": "projects/wio-test-app/src",
+      "root": "projects/test-app",
+      "sourceRoot": "projects/test-app/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/wio-test-app/src/main.ts",
-            "tsConfig": "projects/wio-test-app/tsconfig.app.json",
+            "browser": "projects/test-app/src/main.ts",
+            "tsConfig": "projects/test-app/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/wio-test-app/public"
+                "input": "projects/test-app/public"
+              },
+              {
+                "glob": "**/*.wasm",
+                "input": "projects/flow-path/src/lib/flow-path/path-finders/a-star-wasm/pkg"
               }
             ],
-            "styles": [
-              "projects/wio-test-app/src/styles.scss"
-            ]
+            "styles": ["projects/test-app/src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -58,32 +64,16 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "wio-test-app:build:production"
+              "buildTarget": "test-app:build:production"
             },
             "development": {
-              "buildTarget": "wio-test-app:build:development"
+              "buildTarget": "test-app:build:development"
             }
           },
           "defaultConfiguration": "development"
         },
-        "extract-i18n": {
-          "builder": "@angular/build:extract-i18n"
-        },
         "test": {
-          "builder": "@angular/build:karma",
-          "options": {
-            "tsConfig": "projects/wio-test-app/tsconfig.spec.json",
-            "inlineStyleLanguage": "scss",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "projects/wio-test-app/public"
-              }
-            ],
-            "styles": [
-              "projects/wio-test-app/src/styles.scss"
-            ]
-          }
+          "builder": "@angular/build:unit-test"
         }
       }
     },
@@ -91,7 +81,7 @@
       "projectType": "library",
       "root": "projects/flow-path",
       "sourceRoot": "projects/flow-path/src",
-      "prefix": "wio",
+      "prefix": "lib",
       "architect": {
         "build": {
           "builder": "@angular/build:ng-packagr",
@@ -106,15 +96,12 @@
           "defaultConfiguration": "production"
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular/build:unit-test",
           "options": {
             "tsConfig": "projects/flow-path/tsconfig.spec.json"
           }
         }
       }
     }
-  },
-  "cli": {
-    "analytics": "acc9d4a4-f937-4561-a212-1a06c3970003"
   }
 }

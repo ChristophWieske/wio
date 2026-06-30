@@ -1,6 +1,6 @@
 # FlowPath
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.0.
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.0.
 
 ## Code scaffolding
 
@@ -31,6 +31,7 @@ This command will compile your project, and the build artifacts will be placed i
 Once the project is built, you can publish your library by following these steps:
 
 1. Navigate to the `dist` directory:
+
    ```bash
    cd dist/flow-path
    ```

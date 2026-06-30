@@ -1,5 +1,5 @@
-import { SortedList } from '../sorted-list';
-import { PathFinder } from './path-finder';
+import { SortedList } from '../../sorted-list';
+import { PathFinder } from '../path-finder';
 
 interface GridNode {
   x: number;

@@ -5,9 +5,10 @@ import {
   effect,
   ElementRef,
   inject,
-  output,
+  output, resource,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   PathFinderFactory,
   Position,
@@ -33,8 +34,9 @@ export class FlowPathHost {
   private readonly _obstacles = signal<Record<string, Obstacle[]>>({});
   private readonly _paths = signal<Record<string, string>>({});
   private readonly _rect = signal<DOMRect | null>(null, { equal: rectEqual });
+  private readonly pathFinderFactory = inject(PathFinderFactory);
 
-  readonly pathFinder = inject(PathFinderFactory).createPathFinder();
+  readonly pathFinder = resource({ loader: () => this.pathFinderFactory.createPathFinder() });
   readonly positions = this._positions.asReadonly();
   readonly rect = this._rect.asReadonly();
   readonly paths = computed(() =>
@@ -58,18 +60,21 @@ export class FlowPathHost {
   }
 
   private maintainPathFinderDimensions(): void {
-    effect(() =>
-      this.pathFinder.setDimensions(
-        this._rect()?.width ?? 0,
-        this._rect()?.height ?? 0,
-      ),
-    );
+    effect(() =>{
+        this.pathFinder
+          .value()
+          ?.setDimensions(
+            Math.ceil(this._rect()?.width ?? 0),
+            Math.ceil(this._rect()?.height ?? 0),
+          );
+    });
   }
 
   private maintainPathFinderWeights(): void {
     effect(() => {
       const rect = this._rect();
-      if (!rect) {
+      const pathfinder = this.pathFinder.value();
+      if (!rect || !pathfinder) {
         return;
       }
 
@@ -82,20 +87,17 @@ export class FlowPathHost {
             .flatMap((x) => x)
             .filter((obs) => isWithin({ x, y }, obs));
           if (obstacles.length === 0) {
-            this.pathFinder.setWeight(x, y, 1);
+            pathfinder.setWeight(x, y, 1);
             continue;
           }
 
           if (obstacles.some((x) => x.weight === 0)) {
-            this.pathFinder.setWeight(x, y, 0);
+            pathfinder.setWeight(x, y, 0);
             continue;
           }
 
-          const combinedWeight = obstacles.reduce(
-            (acc, cur) => acc + cur.weight,
-            0,
-          );
-          this.pathFinder.setWeight(x, y, combinedWeight);
+          const combinedWeight = obstacles.reduce((acc, cur) => acc + cur.weight, 0);
+          pathfinder.setWeight(x, y, combinedWeight);
         }
       }
 
@@ -136,7 +138,6 @@ export class FlowPathHost {
       const copy = { ...paths };
 
       if (path) {
-        console.log('Path changed', copy[id], path);
         copy[id] = path;
       } else {
         delete copy[id];
