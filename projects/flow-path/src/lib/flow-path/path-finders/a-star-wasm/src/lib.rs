@@ -4,6 +4,12 @@ use std::collections::BinaryHeap;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 
+// Optimizations
+/// A weight applied to the calculated heuristic of a node.
+/// If 1 a path found will be optimal, but it costs performance.
+/// With 2 the found path might not be optimal, but it could be calculated way faster.
+const HEURISTIC_WEIGHT: u32 = 2;
+
 macro_rules! log {
     ($($t:tt)*) => {{
         #[cfg(target_arch = "wasm32")]
@@ -103,7 +109,7 @@ impl AStar {
         g_score[start_node_index] = 0;
         let mut candidates = vec![];
 
-        let h = heuristic(&start_node, &end_node, None);
+        let h = heuristic(&start_node, &end_node, None) * HEURISTIC_WEIGHT;
         let mut open_list = BinaryHeap::with_capacity((h as usize) * 2);
         let candidate = Candidate {
             node_index: start_node_index,
@@ -158,7 +164,7 @@ impl AStar {
                 }
                 g_score[next_node_index] = g;
 
-                let h = heuristic(&next_node, &end_node, Some(direction));
+                let h = heuristic(&next_node, &end_node, Some(direction)) * HEURISTIC_WEIGHT;
                 let next_candidate_index = candidates.len();
                 let next_candidate = Candidate {
                     node_index: next_node_index,
