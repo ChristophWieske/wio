@@ -63,7 +63,6 @@ export class FlowPath implements OnDestroy {
     const nodes = this.nodes();
     const combinedPath: { x: number; y: number }[] = [];
 
-    const started = performance.now();
     for (let i = 1; i < nodes.length; i++) {
       const from = nodes[i - 1];
       const to = nodes[i];
@@ -83,11 +82,9 @@ export class FlowPath implements OnDestroy {
       }
     }
 
-    const end = performance.now();
     const nextPath =
       'M ' +
       combinedPath.map((position) => `${position.x} ${position.y}`).join(' L ');
-    //this.flowPathHost.setPath(this.id, nextPath);
     this.path.set(nextPath);
   }
 
