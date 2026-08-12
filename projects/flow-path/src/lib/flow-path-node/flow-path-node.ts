@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   Component,
   computed,
   DestroyRef,
@@ -19,67 +20,89 @@ import { rectEqual } from '../rect-equal';
   template: '',
   styleUrl: './flow-path-node.css',
 })
-export class FlowPathNode {
+export class FlowPathNode implements AfterViewInit {
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
   private readonly flowPathHost = inject(FlowPathHost);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * The current rect of the host element as it is returned by `getBoundingClientRect()`.
+   * This is used to calculate the normalized rect relative to the FlowPathHost.
+   */
+  readonly nodeRect = signal(this.host.getBoundingClientRect(), { equal: rectEqual });
+
+  /**
+   * The normalized rect of the host element relative to the FlowPathHost.
+   * This is used to calculate the position of the node in the FlowPathHost's coordinate system.
+   */
+  readonly normalizedRect = computed(
+    () => {
+      const obsRect = this.nodeRect();
+      const hostRect = this.flowPathHost.rect();
+
+      if (!obsRect || !hostRect) {
+        return null;
+      }
+
+      return {
+        ...obsRect,
+        x: obsRect.x - hostRect.x,
+        y: obsRect.y - hostRect.y,
+        width: obsRect.width,
+        height: obsRect.height,
+      };
+    },
+    {
+      equal: rectEqual,
+    },
+  );
+
   readonly id = input.required<string>();
 
   constructor() {
     this.reportPosition();
   }
+  ngAfterViewInit(): void {
+    this.observePosition();
+  }
 
-  private reportPosition(): void {
-    const nodeRect = signal<DOMRect | null>(null);
-    const resizeObserver = new ResizeObserver(() => nodeRect.set(this.host.getBoundingClientRect()));
+  private observePosition(): void {
+
+    const resizeObserver = new ResizeObserver((entry) =>
+      this.nodeRect.set(this.host.getBoundingClientRect()),
+    );
     resizeObserver.observe(this.host);
 
     const positionObserver = new PositionObserver((entries) => {
-      console.log('Hello!', entries);
       for (const entry of entries) {
         if (entry.target !== this.host) {
           continue;
         }
 
-        nodeRect.set(entry.boundingClientRect);
+        this.nodeRect.set(entry.boundingClientRect);
       }
     });
 
-    setTimeout(() => {
-      console.log('Connected:', this.host.isConnected);
       positionObserver.observe(this.host);
-    }, 1000);
-    
 
-    const normalizedRect = computed(
-      () => {
-        const obsRect = nodeRect();
-        const hostRect = this.flowPathHost.rect();
+    this.destroyRef.onDestroy(() => {
+      resizeObserver.disconnect();
+      positionObserver.disconnect();
+    });
+  }
 
-        if (!obsRect || !hostRect) {
-          return null;
-        }
-
-        return {
-          ...obsRect,
-          x: obsRect.x - hostRect.x,
-          y: obsRect.y - hostRect.y,
-          width: obsRect.width,
-          height: obsRect.height,
-        };
-      },
-      {
-        equal: rectEqual,
-      },
-    );
+  private reportPosition(): void {
 
     let latestId: string | undefined;
-    effect(() => {
+    effect((onCleanup) => {
+      onCleanup(() => this.flowPathHost.setPosition(this.id(), undefined));
+
       if (this.id() !== latestId && latestId !== undefined) {
         this.flowPathHost.setPosition(latestId, undefined);
       }
       latestId = this.id();
 
-      const rect = normalizedRect();
+      const rect = this.normalizedRect();
       if (!rect) {
         this.flowPathHost.setPosition(this.id(), undefined);
         return;
@@ -89,12 +112,6 @@ export class FlowPathNode {
         x: Math.round(rect.x + rect.width / 2),
         y: Math.round(rect.y + rect.height / 2),
       });
-    });
-
-    inject(DestroyRef).onDestroy(() => {
-      resizeObserver.disconnect();
-      positionObserver.disconnect();
-      this.flowPathHost.setPosition(this.id(), undefined);
     });
   }
 }

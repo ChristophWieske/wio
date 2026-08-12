@@ -81,10 +81,7 @@ export class FlowPath implements OnDestroy {
 
   private prepareNodes(): Signal<Position[]> {
     return computed(
-      () => {
-        const a = this.positions().map((x) => this.flowPathHost.positions()[x]);
-        return a;
-      },
+      () => this.positions().map((x) => this.flowPathHost.positions()[x]),
       { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
     );
   }
