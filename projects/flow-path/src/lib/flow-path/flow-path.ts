@@ -24,7 +24,7 @@ export class FlowPath implements OnDestroy {
 
   readonly positions = input.required<string[]>();
   readonly nodes = this.prepareNodes();
-  readonly path = signal('');
+  readonly path = signal<Position[]>([]);
 
   constructor() {
     this.calculatePathOnChange();
@@ -65,7 +65,7 @@ export class FlowPath implements OnDestroy {
 
       if (!from || !to) {
         this.flowPathHost.setPath(this.id, undefined);
-        this.path.set('');
+        this.path.set([]);
         return;
       }
 
@@ -75,13 +75,8 @@ export class FlowPath implements OnDestroy {
       }
     }
 
-    const nextPath =
-      combinedPath.length > 0
-        ? 'M ' + combinedPath.map((position) => `${position.x} ${position.y}`).join(' L ')
-        : '';
-
-    this.path.set(nextPath);
-    this.flowPathHost.setPath(this.id, nextPath);
+    this.path.set(combinedPath);
+    this.flowPathHost.setPath(this.id, combinedPath);
   }
 
   private prepareNodes(): Signal<Position[]> {

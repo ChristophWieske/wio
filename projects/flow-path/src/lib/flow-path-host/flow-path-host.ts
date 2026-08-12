@@ -34,14 +34,16 @@ export class FlowPathHost {
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly _positions = signal<Record<string, Position>>({});
   private readonly _obstacles = signal<Record<string, Obstacle[]>>({});
-  private readonly _paths = signal<Record<string, string>>({});
+  private readonly _paths = signal<Record<string, Position[]>>({});
   private readonly _rect = signal<DOMRect | null>(null, { equal: rectEqual });
   private readonly pathFinderFactory = inject(PathFinderFactory);
 
   readonly pathFinder = resource({ loader: () => this.pathFinderFactory.createPathFinder() });
   readonly positions = this._positions.asReadonly();
   readonly rect = this._rect.asReadonly();
-  readonly paths = computed(() => Object.entries(this._paths()).map(([id, data]) => ({ id, data })));
+  readonly paths = computed(() =>
+    Object.entries(this._paths()).map(([id, path]) => ({ id, path })),
+  );
   readonly weightsChanged = output();
 
   constructor() {
@@ -63,7 +65,6 @@ export class FlowPathHost {
   }
 
   private renderCanvas(): void {
-
     const canvas = this.canvas()?.nativeElement;
     if (!canvas) {
       return;
@@ -74,7 +75,10 @@ export class FlowPathHost {
     const height = Math.max(1, Math.ceil(rect?.height ?? this.host.clientHeight ?? 0));
     const ratio = window.devicePixelRatio || 1;
 
-    if (canvas.width !== Math.floor(width * ratio) || canvas.height !== Math.floor(height * ratio)) {
+    if (
+      canvas.width !== Math.floor(width * ratio) ||
+      canvas.height !== Math.floor(height * ratio)
+    ) {
       canvas.width = Math.floor(width * ratio);
       canvas.height = Math.floor(height * ratio);
     }
@@ -93,12 +97,16 @@ export class FlowPathHost {
     context.lineWidth = 3;
 
     for (const entry of this.paths()) {
-      if (!entry.data) {
+      if (!entry.path || entry.path.length < 2) {
         continue;
       }
 
-      const path = new Path2D(entry.data);
-      context.stroke(path);
+      context.beginPath();
+      context.moveTo(entry.path[0].x, entry.path[0].y);
+      for (let i = 1; i < entry.path.length; i++) {
+        context.lineTo(entry.path[i].x, entry.path[i].y);
+      }
+      context.stroke();
     }
   }
 
@@ -174,7 +182,7 @@ export class FlowPathHost {
     });
   }
 
-  setPath(id: string, path: string | undefined): void {
+  setPath(id: string, path: Position[] | undefined): void {
     this._paths.update((paths) => {
       const copy = { ...paths };
 
