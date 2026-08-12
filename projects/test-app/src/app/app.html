@@ -8,11 +8,10 @@
         <div class="obstacle" wioObstacle [brimWidth]="20"></div>
         <div class="obstacle" wioObstacle [brimWidth]="20"></div>
         <div class="obstacle" wioObstacle [brimWidth]="20"></div>
-        <wio-flow-path-node id="end" />
+        <wio-flow-path-node id="end" cdkDrag />
     </div>
 
-    <svg:path
-            wio-flow-path
+    <wio-flow-path
             [positions]="['start', 'end']"
             (click)="activate()"
             id="a"

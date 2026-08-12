@@ -12,13 +12,9 @@ import { FlowPathHost } from '../../public-api';
 import { Position } from './path-finders/path-finder';
 
 @Component({
-  selector: 'svg:path [wio-flow-path]',
+  selector: 'wio-flow-path',
   imports: [],
-  templateUrl: './flow-path.html',
-  styleUrl: './flow-path.css',
-  host: {
-    '[attr.d]': 'path()',
-  },
+  template: '',
 })
 export class FlowPath implements OnDestroy {
   static counter = 0;
@@ -69,23 +65,23 @@ export class FlowPath implements OnDestroy {
 
       if (!from || !to) {
         this.flowPathHost.setPath(this.id, undefined);
+        this.path.set('');
         return;
       }
 
-      const findStart = performance.now();
       const path = this.flowPathHost.pathFinder.value()?.findPath(from.x, from.y, to.x, to.y);
-      const findEnd = performance.now();
-      console.log('Needed ', findEnd - findStart, "for ", path);
-
       if (path) {
         combinedPath.push(...path);
       }
     }
 
     const nextPath =
-      'M ' +
-      combinedPath.map((position) => `${position.x} ${position.y}`).join(' L ');
+      combinedPath.length > 0
+        ? 'M ' + combinedPath.map((position) => `${position.x} ${position.y}`).join(' L ')
+        : '';
+
     this.path.set(nextPath);
+    this.flowPathHost.setPath(this.id, nextPath);
   }
 
   private prepareNodes(): Signal<Position[]> {

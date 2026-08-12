@@ -1,7 +1,2 @@
-<svg>
-  @for (path of paths(); track path.id) {
-    <path [attr.d]="path.data" />
-  }
-  <ng-content select="path" />
-</svg>
+<canvas #canvas></canvas>
 <ng-content></ng-content>

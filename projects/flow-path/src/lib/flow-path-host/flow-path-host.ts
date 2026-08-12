@@ -5,10 +5,11 @@ import {
   effect,
   ElementRef,
   inject,
-  output, resource,
+  output,
+  resource,
   signal,
+  viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import {
   PathFinderFactory,
   Position,
@@ -30,6 +31,7 @@ export interface Obstacle extends Position {
 })
 export class FlowPathHost {
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
+  private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly _positions = signal<Record<string, Position>>({});
   private readonly _obstacles = signal<Record<string, Obstacle[]>>({});
   private readonly _paths = signal<Record<string, string>>({});
@@ -39,15 +41,16 @@ export class FlowPathHost {
   readonly pathFinder = resource({ loader: () => this.pathFinderFactory.createPathFinder() });
   readonly positions = this._positions.asReadonly();
   readonly rect = this._rect.asReadonly();
-  readonly paths = computed(() =>
-    Object.entries(this._paths()).map(([id, data]) => ({ id, data })),
-  );
+  readonly paths = computed(() => Object.entries(this._paths()).map(([id, data]) => ({ id, data })));
   readonly weightsChanged = output();
 
   constructor() {
     this.maintainRect();
     this.maintainPathFinderDimensions();
     this.maintainPathFinderWeights();
+    effect(() => {
+      this.renderCanvas();
+    });
   }
 
   private maintainRect() {
@@ -59,14 +62,51 @@ export class FlowPathHost {
     inject(DestroyRef).onDestroy(() => observer.disconnect());
   }
 
+  private renderCanvas(): void {
+
+    const canvas = this.canvas()?.nativeElement;
+    if (!canvas) {
+      return;
+    }
+
+    const rect = this._rect();
+    const width = Math.max(1, Math.ceil(rect?.width ?? this.host.clientWidth ?? 0));
+    const height = Math.max(1, Math.ceil(rect?.height ?? this.host.clientHeight ?? 0));
+    const ratio = window.devicePixelRatio || 1;
+
+    if (canvas.width !== Math.floor(width * ratio) || canvas.height !== Math.floor(height * ratio)) {
+      canvas.width = Math.floor(width * ratio);
+      canvas.height = Math.floor(height * ratio);
+    }
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.lineJoin = 'round';
+    context.lineCap = 'round';
+    context.strokeStyle = '#4f46e5';
+    context.lineWidth = 3;
+
+    for (const entry of this.paths()) {
+      if (!entry.data) {
+        continue;
+      }
+
+      const path = new Path2D(entry.data);
+      context.stroke(path);
+    }
+  }
+
   private maintainPathFinderDimensions(): void {
-    effect(() =>{
-        this.pathFinder
-          .value()
-          ?.setDimensions(
-            Math.ceil(this._rect()?.width ?? 0),
-            Math.ceil(this._rect()?.height ?? 0),
-          );
+    effect(() => {
+      this.pathFinder
+        .value()
+        ?.setDimensions(Math.ceil(this._rect()?.width ?? 0), Math.ceil(this._rect()?.height ?? 0));
     });
   }
 
@@ -86,6 +126,7 @@ export class FlowPathHost {
           const obstacles = Object.values(this._obstacles())
             .flatMap((x) => x)
             .filter((obs) => isWithin({ x, y }, obs));
+
           if (obstacles.length === 0) {
             pathfinder.setWeight(x, y, 1);
             continue;

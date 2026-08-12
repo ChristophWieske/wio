@@ -8,6 +8,8 @@ import {
   input,
   signal,
 } from '@angular/core';
+import PositionObserver from '@thednp/position-observer';
+import { timeout } from 'rxjs';
 import { FlowPathHost } from '../flow-path-host/flow-path-host';
 import { rectEqual } from '../rect-equal';
 
@@ -28,10 +30,25 @@ export class FlowPathNode {
 
   private reportPosition(): void {
     const nodeRect = signal<DOMRect | null>(null);
-    const observer = new ResizeObserver(() =>
-      nodeRect.set(this.host.getBoundingClientRect()),
-    );
-    observer.observe(this.host);
+    const resizeObserver = new ResizeObserver(() => nodeRect.set(this.host.getBoundingClientRect()));
+    resizeObserver.observe(this.host);
+
+    const positionObserver = new PositionObserver((entries) => {
+      console.log('Hello!', entries);
+      for (const entry of entries) {
+        if (entry.target !== this.host) {
+          continue;
+        }
+
+        nodeRect.set(entry.boundingClientRect);
+      }
+    });
+
+    setTimeout(() => {
+      console.log('Connected:', this.host.isConnected);
+      positionObserver.observe(this.host);
+    }, 1000);
+    
 
     const normalizedRect = computed(
       () => {
@@ -75,7 +92,8 @@ export class FlowPathNode {
     });
 
     inject(DestroyRef).onDestroy(() => {
-      observer.disconnect();
+      resizeObserver.disconnect();
+      positionObserver.disconnect();
       this.flowPathHost.setPosition(this.id(), undefined);
     });
   }

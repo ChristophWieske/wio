@@ -1,18 +1,17 @@
-import {Injectable} from '@angular/core';
+import { Injectable } from '@angular/core';
 import { AStarWasm } from './a-star-wasm/a-star-wasm';
-import initAStarWasm from './a-star-wasm/pkg';
+import initAStarWasm from './a-star-wasm/pkg/a_star_rust';
 
-let A_STAR_INITIALIZED = false;
+let aStarWasmInitialized = false;
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class PathFinderFactory {
   async createPathFinder(): Promise<PathFinder> {
-    if (A_STAR_INITIALIZED) {
-      return new AStarWasm();
+    if (!aStarWasmInitialized) {
+      await initAStarWasm(undefined);
+      aStarWasmInitialized = true;
     }
 
-    A_STAR_INITIALIZED = true;
-    await initAStarWasm();
     return new AStarWasm();
   }
 }
