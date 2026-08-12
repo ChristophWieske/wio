@@ -1,14 +1,15 @@
 import {
   Component,
+  DestroyRef,
+  OnDestroy,
+  Signal,
   computed,
   effect,
   inject,
   input,
-  OnDestroy,
   signal,
-  Signal,
 } from '@angular/core';
-import { FlowPathHost } from '../../public-api';
+import { injectFlowPathHost } from '../flow-path-host/inject-flow-path-host';
 import { Position } from './path-finders/path-finder';
 
 @Component({
@@ -19,7 +20,8 @@ import { Position } from './path-finders/path-finder';
 export class FlowPath implements OnDestroy {
   static counter = 0;
   private readonly id = `path-${++FlowPath.counter}`;
-  private readonly flowPathHost = inject(FlowPathHost);
+  private readonly flowPathHost = injectFlowPathHost();
+  private readonly destroyRef = inject(DestroyRef);
   private queued = false;
 
   readonly positions = input.required<string[]>();
@@ -40,7 +42,8 @@ export class FlowPath implements OnDestroy {
       this.queueCalculatePath();
     });
 
-    this.flowPathHost.weightsChanged.subscribe(() => this.queueCalculatePath());
+    const unsubscribe = this.flowPathHost.onWeightsChanged(() => this.queueCalculatePath());
+    this.destroyRef.onDestroy(unsubscribe);
   }
 
   private queueCalculatePath(): void {
@@ -57,19 +60,28 @@ export class FlowPath implements OnDestroy {
 
   private calculatePath(): void {
     const nodes = this.nodes();
-    const combinedPath: { x: number; y: number }[] = [];
+    const combinedPath: Position[] = [];
+    const pathfinder = this.flowPathHost.getPathFinder();
+    const hostRect = this.flowPathHost.rect();
+    const maxX = Math.max(0, Math.ceil(hostRect?.width ?? 0) - 1);
+    const maxY = Math.max(0, Math.ceil(hostRect?.height ?? 0) - 1);
 
     for (let i = 1; i < nodes.length; i++) {
       const from = nodes[i - 1];
       const to = nodes[i];
 
-      if (!from || !to) {
+      if (!from || !to || !pathfinder || !hostRect) {
         this.flowPathHost.setPath(this.id, undefined);
         this.path.set([]);
         return;
       }
 
-      const path = this.flowPathHost.pathFinder.value()?.findPath(from.x, from.y, to.x, to.y);
+      const fromX = clampToGrid(Math.round(from.x), maxX);
+      const fromY = clampToGrid(Math.round(from.y), maxY);
+      const toX = clampToGrid(Math.round(to.x), maxX);
+      const toY = clampToGrid(Math.round(to.y), maxY);
+
+      const path = pathfinder.findPath(fromX, fromY, toX, toY);
       if (path) {
         combinedPath.push(...path);
       }
@@ -79,10 +91,21 @@ export class FlowPath implements OnDestroy {
     this.flowPathHost.setPath(this.id, combinedPath);
   }
 
-  private prepareNodes(): Signal<Position[]> {
+  private prepareNodes(): Signal<(Position | undefined)[]> {
     return computed(
-      () => this.positions().map((x) => this.flowPathHost.positions()[x]),
+      () => this.positions().map((id) => this.flowPathHost.position(id)),
       { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
     );
   }
+}
+
+function clampToGrid(value: number, max: number): number {
+  if (value < 0) {
+    return 0;
+  }
+  if (value > max) {
+    return max;
+  }
+
+  return value;
 }

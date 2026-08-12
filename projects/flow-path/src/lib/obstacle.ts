@@ -8,8 +8,8 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { FlowPathHost } from '../public-api';
-import { Obstacle as ObstacleModel } from './flow-path-host/flow-path-host';
+import { Obstacle as ObstacleModel } from './flow-path-host/flow-path-host-api';
+import { injectFlowPathHost } from './flow-path-host/inject-flow-path-host';
 import { rectEqual } from './rect-equal';
 
 @Directive({
@@ -19,7 +19,7 @@ export class Obstacle {
   static counter = 0;
   private readonly id = `obstacle-${++Obstacle.counter}`;
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
-  private readonly flowPathHost = inject(FlowPathHost);
+  private readonly flowPathHost = injectFlowPathHost();
 
   readonly weight = input(0);
   readonly brimWeight = input(0);

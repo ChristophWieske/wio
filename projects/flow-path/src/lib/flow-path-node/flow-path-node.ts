@@ -1,17 +1,16 @@
 import {
   AfterViewInit,
   Component,
-  computed,
   DestroyRef,
-  effect,
   ElementRef,
+  computed,
+  effect,
   inject,
   input,
   signal,
 } from '@angular/core';
 import PositionObserver from '@thednp/position-observer';
-import { timeout } from 'rxjs';
-import { FlowPathHost } from '../flow-path-host/flow-path-host';
+import { injectFlowPathHost } from '../flow-path-host/inject-flow-path-host';
 import { rectEqual } from '../rect-equal';
 
 @Component({
@@ -22,19 +21,10 @@ import { rectEqual } from '../rect-equal';
 })
 export class FlowPathNode implements AfterViewInit {
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
-  private readonly flowPathHost = inject(FlowPathHost);
+  private readonly flowPathHost = injectFlowPathHost();
   private readonly destroyRef = inject(DestroyRef);
 
-  /**
-   * The current rect of the host element as it is returned by `getBoundingClientRect()`.
-   * This is used to calculate the normalized rect relative to the FlowPathHost.
-   */
   readonly nodeRect = signal(this.host.getBoundingClientRect(), { equal: rectEqual });
-
-  /**
-   * The normalized rect of the host element relative to the FlowPathHost.
-   * This is used to calculate the position of the node in the FlowPathHost's coordinate system.
-   */
   readonly normalizedRect = computed(
     () => {
       const obsRect = this.nodeRect();
@@ -62,13 +52,13 @@ export class FlowPathNode implements AfterViewInit {
   constructor() {
     this.reportPosition();
   }
+
   ngAfterViewInit(): void {
     this.observePosition();
   }
 
   private observePosition(): void {
-
-    const resizeObserver = new ResizeObserver((entry) =>
+    const resizeObserver = new ResizeObserver(() =>
       this.nodeRect.set(this.host.getBoundingClientRect()),
     );
     resizeObserver.observe(this.host);
@@ -82,8 +72,7 @@ export class FlowPathNode implements AfterViewInit {
         this.nodeRect.set(entry.boundingClientRect);
       }
     });
-
-      positionObserver.observe(this.host);
+    positionObserver.observe(this.host);
 
     this.destroyRef.onDestroy(() => {
       resizeObserver.disconnect();
@@ -92,7 +81,6 @@ export class FlowPathNode implements AfterViewInit {
   }
 
   private reportPosition(): void {
-
     let latestId: string | undefined;
     effect((onCleanup) => {
       onCleanup(() => this.flowPathHost.setPosition(this.id(), undefined));

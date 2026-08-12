@@ -9,7 +9,4 @@ import { FlowPath, FlowPathHost, FlowPathNode, Obstacle } from '../../../flow-pa
   styleUrl: './app.scss',
 })
 export class App {
-  activate() {
-    alert('Clicked the flow path!');
-  }
 }

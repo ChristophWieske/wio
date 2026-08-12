@@ -1,4 +1,4 @@
-import { Obstacle } from './flow-path-host/flow-path-host';
+import { Obstacle } from './flow-path-host/flow-path-host-api';
 import { Position } from './flow-path/path-finders/path-finder';
 
 export function isWithin(position: Position, obstacle: Obstacle): boolean {
