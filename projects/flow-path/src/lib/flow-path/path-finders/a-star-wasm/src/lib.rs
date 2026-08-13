@@ -2,7 +2,6 @@ use console_error_panic_hook;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use wasm_bindgen::prelude::*;
-use web_sys::console;
 
 // Optimizations
 /// A weight applied to the calculated heuristic of a node.
@@ -90,12 +89,22 @@ impl AStar {
     }
 
     pub fn set_weight(&mut self, x: u16, y: u16, weight: u32) -> () {
+        if x >= self.width || y >= self.height {
+            return;
+        }
+
         let index = get_node_index(x, y, self.width);
         self.nodes[index].weight = weight;
     }
 
     pub fn find_path(&mut self, x1: u16, y1: u16, x2: u16, y2: u16) -> Option<Vec<Node>> {
-        if x1 >= self.width || y1 >= self.height || x2 >= self.width || y2 >= self.height {
+        if self.width == 0
+            || self.height == 0
+            || x1 >= self.width
+            || y1 >= self.height
+            || x2 >= self.width
+            || y2 >= self.height
+        {
             return None;
         }
 
@@ -104,6 +113,10 @@ impl AStar {
 
         let end_node_index = get_node_index(x2, y2, self.width);
         let end_node = &self.nodes[end_node_index];
+
+        if start_node.weight == 0 || end_node.weight == 0 {
+            return None;
+        }
 
         let mut g_score = vec![u32::MAX; self.width as usize * self.height as usize];
         g_score[start_node_index] = 0;
@@ -278,7 +291,7 @@ mod tests {
             y: 1,
         };
         let result = heuristic(&start_node, &target_node, None);
-        assert_eq!(result, 12);
+        assert_eq!(result, 3);
     }
 
     #[test]
@@ -294,7 +307,7 @@ mod tests {
             y: 3,
         };
         let result = heuristic(&start_node, &target_node, None);
-        assert_eq!(result, 14);
+        assert_eq!(result, 5);
     }
 
     #[test]
@@ -344,7 +357,7 @@ mod tests {
         let current_direction = (0, 1);
 
         let result = heuristic(&from_node, &target_node, Some(current_direction));
-        assert_eq!(result, 11);
+        assert_eq!(result, 2);
     }
 
     #[test]
@@ -361,7 +374,7 @@ mod tests {
         };
         let current_direction = (1, 0);
         let result = heuristic(&start_node, &target_node, Some(current_direction));
-        assert_eq!(result, 11);
+        assert_eq!(result, 2);
     }
 
     #[test]
@@ -378,7 +391,7 @@ mod tests {
         };
         let current_direction = (0, 1);
         let result = heuristic(&from_node, &target_node, Some(current_direction));
-        assert_eq!(result, 12);
+        assert_eq!(result, 3);
     }
 
     #[test]
@@ -423,6 +436,34 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn blocked_start_node_short_circuits() {
+        let mut astar = AStar {
+            nodes: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        astar.set_dimensions(4, 4);
+        astar.set_weight(0, 0, 0);
+
+        assert!(astar.find_path(0, 0, 3, 3).is_none());
+    }
+
+    #[test]
+    fn blocked_end_node_short_circuits() {
+        let mut astar = AStar {
+            nodes: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        astar.set_dimensions(4, 4);
+        astar.set_weight(3, 3, 0);
+
+        assert!(astar.find_path(0, 0, 3, 3).is_none());
     }
 
     #[test]

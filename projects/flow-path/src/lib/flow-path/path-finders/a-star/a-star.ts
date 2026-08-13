@@ -75,8 +75,12 @@ export class AStar implements PathFinder {
   ): { x: number; y: number }[] | null {
     this.runId++;
 
-    const startNode = this.grid[x1][y1];
-    const endNode = this.grid[x2][y2];
+    const startNode = this.grid[x1]?.[y1];
+    const endNode = this.grid[x2]?.[y2];
+
+    if (!startNode || !endNode || startNode.weight === 0 || endNode.weight === 0) {
+      return null;
+    }
 
     startNode.g = 0;
     startNode.h = heuristic(startNode, endNode);
