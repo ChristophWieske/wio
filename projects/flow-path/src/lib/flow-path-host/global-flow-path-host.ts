@@ -1,9 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Injectable, inject, Service } from '@angular/core';
-import {
-  PathFinderFactory,
-  Position,
-} from '../flow-path/path-finders/path-finder';
+import { PathFinderFactory, Position } from '../flow-path/path-finders/path-finder';
 import { FlowPathHostApi, Obstacle } from './flow-path-host-api';
 import { FlowPathHostEngine } from './flow-path-host-engine';
 
@@ -39,8 +36,8 @@ export class GlobalFlowPathHost implements FlowPathHostApi {
     return this.engine.getPathFinder();
   }
 
-  onWeightsChanged(listener: () => void): () => void {
-    return this.engine.onWeightsChanged(listener);
+  onGridChanged(listener: () => void): () => void {
+    return this.engine.onGridChanged(listener);
   }
 
   setPosition(id: string, node: Position | undefined): void {

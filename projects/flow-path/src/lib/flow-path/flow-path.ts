@@ -42,7 +42,7 @@ export class FlowPath implements OnDestroy {
       this.queueCalculatePath();
     });
 
-    const unsubscribe = this.flowPathHost.onWeightsChanged(() => this.queueCalculatePath());
+    const unsubscribe = this.flowPathHost.onGridChanged(() => this.queueCalculatePath());
     this.destroyRef.onDestroy(unsubscribe);
   }
 
@@ -92,10 +92,9 @@ export class FlowPath implements OnDestroy {
   }
 
   private prepareNodes(): Signal<(Position | undefined)[]> {
-    return computed(
-      () => this.positions().map((id) => this.flowPathHost.position(id)),
-      { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
-    );
+    return computed(() => this.positions().map((id) => this.flowPathHost.position(id)), {
+      equal: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+    });
   }
 }
 

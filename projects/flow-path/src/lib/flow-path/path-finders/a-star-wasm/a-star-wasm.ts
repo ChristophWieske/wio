@@ -1,15 +1,32 @@
 import { PathFinder, Position } from '../path-finder';
 import { create_astar_instance } from './pkg/a_star_rust';
 
+export interface PathObstacle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  weight: number;
+}
+
 export class AStarWasm implements PathFinder {
   private readonly wasmInstance = create_astar_instance();
 
-  setWeight(x: number, y: number, weight: number): void {
-    this.wasmInstance.set_weight(x, y, weight);
-  }
-
-  setDimensions(width: number, height: number): void {
-    this.wasmInstance.set_dimensions(width, height);
+  setGrid(width: number, height: number, obstacles: PathObstacle[]): void {
+    // Create a Uint32Array to hold the obstacle data.
+    // Each obstacle has 5 properties: x, y, width, height, weight.
+    // So the total length of the array is obstacles.length * 5.
+    // This is mainly for performance reasons, as passing a typed array to WebAssembly is more efficient than passing an array of objects.
+    const obstacleArray = new Uint32Array(obstacles.length * 5);
+    for (let i = 0, j = 0; i < obstacles.length; i++) {
+      const o = obstacles[i];
+      obstacleArray[j++] = o.x;
+      obstacleArray[j++] = o.y;
+      obstacleArray[j++] = o.width;
+      obstacleArray[j++] = o.height;
+      obstacleArray[j++] = o.weight;
+    }
+    this.wasmInstance.set_grid(width, height, obstacleArray);
   }
 
   findPath(x1: number, y1: number, x2: number, y2: number): Position[] | null {

@@ -1,4 +1,5 @@
 import { SortedList } from '../../sorted-list';
+import { PathObstacle } from '../a-star-wasm/a-star-wasm';
 import { PathFinder } from '../path-finder';
 
 interface GridNode {
@@ -67,12 +68,18 @@ export class AStar implements PathFinder {
     );
   }
 
-  findPath(
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-  ): { x: number; y: number }[] | null {
+  setGrid(width: number, height: number, obstacles: PathObstacle[]) {
+    this.setDimensions(width, height);
+    for (const obstacle of obstacles) {
+      for (let x = obstacle.x; x < obstacle.x + obstacle.width; x++) {
+        for (let y = obstacle.y; y < obstacle.y + obstacle.height; y++) {
+          this.setWeight(x, y, obstacle.weight);
+        }
+      }
+    }
+  }
+
+  findPath(x1: number, y1: number, x2: number, y2: number): { x: number; y: number }[] | null {
     this.runId++;
 
     const startNode = this.grid[x1]?.[y1];
@@ -112,10 +119,7 @@ export class AStar implements PathFinder {
           continue;
         }
 
-        const g =
-          current.g! +
-          nextNode.weight +
-          costForDirectionChange(nextNode, current);
+        const g = current.g! + nextNode.weight + costForDirectionChange(nextNode, current);
         const h = heuristic(nextNode, endNode);
         const f = g + h;
 
@@ -159,10 +163,7 @@ export class AStar implements PathFinder {
   }
 }
 
-function costForDirectionChange(
-  node: GridNode,
-  potentialParent: GridNode,
-): number {
+function costForDirectionChange(node: GridNode, potentialParent: GridNode): number {
   const grandfather = potentialParent.parent;
   if (!grandfather) {
     return 0;

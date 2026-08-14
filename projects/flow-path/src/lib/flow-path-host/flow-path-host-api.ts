@@ -10,7 +10,7 @@ export interface FlowPathHostApi {
   rect(): DOMRect | null;
   position(id: string): Position | undefined;
   getPathFinder(): PathFinder | undefined;
-  onWeightsChanged(listener: () => void): () => void;
+  onGridChanged(listener: () => void): () => void;
   setPosition(id: string, node: Position | undefined): void;
   setObstacle(id: string, obstacles: Obstacle[] | undefined): void;
   setPath(id: string, path: Position[] | undefined): void;

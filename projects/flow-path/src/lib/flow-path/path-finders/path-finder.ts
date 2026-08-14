@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { AStarWasm } from './a-star-wasm/a-star-wasm';
-import initAStarWasm from './a-star-wasm/pkg/a_star_rust';
+import { AStarWasm, PathObstacle } from './a-star-wasm/a-star-wasm';
+import initAStarWasm from './a-star-wasm/pkg/a_star_rust.js';
 
 @Injectable({ providedIn: 'root' })
 export class PathFinderFactory {
@@ -31,25 +31,12 @@ export interface Position {
 
 export interface PathFinder {
   /**
-   * Defines the weight of a node, which will influence the path finding.
-   * @param x The x coordinate of the addressed node. Must be an integer.
-   * @param y The y coordinate of the addressed node. Must be an integer.
-   * @param weight The weight of a node which determines its cost when part of the currently checked path.
-   * When "0", the node is blocked and can´t be used to find a path.
-   * Weights between "0" and "1" are not allowed and are rejected.
-   * Negative weights are not allowed and are rejected.
-   * "1" is the default weight.
-   * Above "1" all weights are valid
+   * Sets the grid with the given width, height and obstacles.
+   * @param width The width of the grid. If a decimal is provided it is rounded up, making the grid a little bigger.
+   * @param height The height of the grid. If a decimal is provided it is rounded up, making the grid a little bigger.
+   * @param obstacles The obstacles that are present in the grid. Each obstacle has a position, size and weight.
    */
-  setWeight(x: number, y: number, weight: number): void;
-
-  /**
-   * Sets the dimensions of the plane that shall contain the path.
-   * The path searching will check all paths up to the edge of the plane, but not beyond.
-   * @param width The width of the plane. If a decimal is provided it is rounded up, making the plane a little bigger.
-   * @param height The height of the plane. If a decimal is provided it is rounded up, making the plane a little bigger.
-   */
-  setDimensions(width: number, height: number): void;
+  setGrid(width: number, height: number, obstacles: PathObstacle[]): void;
 
   /**
    * Tries to find a path within the search plane.

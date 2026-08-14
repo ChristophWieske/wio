@@ -1,9 +1,6 @@
 import { effect, resource, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import {
-  PathFinderFactory,
-  Position,
-} from '../flow-path/path-finders/path-finder';
+import { PathFinderFactory, Position } from '../flow-path/path-finders/path-finder';
 import { isWithin } from '../is-within-rect';
 import { rectEqual } from '../rect-equal';
 import { FlowPathHostApi, Obstacle } from './flow-path-host-api';
@@ -19,7 +16,7 @@ export class FlowPathHostEngine implements FlowPathHostApi {
   private readonly _obstacles = signal<Record<string, Obstacle[]>>({});
   private readonly _paths = signal<Record<string, Position[]>>({});
   private readonly _rect = signal<DOMRect | null>(null, { equal: rectEqual });
-  private readonly weightsChanged = new Subject<void>();
+  private readonly gridChanged = new Subject<void>();
 
   readonly pathFinder;
 
@@ -28,8 +25,7 @@ export class FlowPathHostEngine implements FlowPathHostApi {
       loader: () => this.options.pathFinderFactory.createPathFinder(),
     });
 
-    this.maintainPathFinderDimensions();
-    this.maintainPathFinderWeights();
+    this.maintainPathFinderGrid();
     effect(() => {
       this.renderCanvas();
     });
@@ -51,8 +47,8 @@ export class FlowPathHostEngine implements FlowPathHostApi {
     return this.pathFinder.value();
   }
 
-  onWeightsChanged(listener: () => void): () => void {
-    const subscription = this.weightsChanged.subscribe(listener);
+  onGridChanged(listener: () => void): () => void {
+    const subscription = this.gridChanged.subscribe(listener);
     return () => subscription.unsubscribe();
   }
 
@@ -98,47 +94,17 @@ export class FlowPathHostEngine implements FlowPathHostApi {
     });
   }
 
-  private maintainPathFinderDimensions(): void {
-    effect(() => {
-      const rect = this._rect();
-      this.pathFinder
-        .value()
-        ?.setDimensions(Math.ceil(rect?.width ?? 0), Math.ceil(rect?.height ?? 0));
-    });
-  }
-
-  private maintainPathFinderWeights(): void {
+  private maintainPathFinderGrid(): void {
     effect(() => {
       const rect = this._rect();
       const pathfinder = this.pathFinder.value();
       if (!rect || !pathfinder) {
         return;
       }
-
-      const height = Math.ceil(rect.height);
-      const width = Math.ceil(rect.width);
       const obstacleList = Object.values(this._obstacles()).flatMap((entry) => entry);
 
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const obstacles = obstacleList.filter((obs) => isWithin({ x, y }, obs));
-
-          if (obstacles.length === 0) {
-            pathfinder.setWeight(x, y, 1);
-            continue;
-          }
-
-          if (obstacles.some((obs) => obs.weight === 0)) {
-            pathfinder.setWeight(x, y, 0);
-            continue;
-          }
-
-          const combinedWeight = obstacles.reduce((acc, cur) => acc + cur.weight, 0);
-          pathfinder.setWeight(x, y, combinedWeight);
-        }
-      }
-
-      this.weightsChanged.next();
+      pathfinder.setGrid(Math.ceil(rect?.width ?? 0), Math.ceil(rect?.height ?? 0), obstacleList);
+      this.gridChanged.next();
     });
   }
 

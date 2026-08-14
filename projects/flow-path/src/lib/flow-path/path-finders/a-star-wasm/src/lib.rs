@@ -2,6 +2,7 @@ use console_error_panic_hook;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use wasm_bindgen::prelude::*;
+use web_sys::console::log;
 
 // Optimizations
 /// A weight applied to the calculated heuristic of a node.
@@ -69,12 +70,17 @@ pub fn main() {
 
 #[wasm_bindgen]
 impl AStar {
-    pub fn set_dimensions(&mut self, width: u16, height: u16) -> () {
-        log!("Setting dimensions {}x{}", width, height);
+    pub fn set_grid(&mut self, width: u16, height: u16, obstacles: &[u32]) {
+        log!(
+            "width: {}, height: {}, obstacles: {:?}",
+            width,
+            height,
+            obstacles
+        );
         self.width = width;
         self.height = height;
-        let mut nodes = Vec::with_capacity(width as usize * height as usize);
-
+        let length = width as usize * height as usize;
+        let mut nodes = Vec::with_capacity(length);
         for y in 0..height {
             for x in 0..width {
                 nodes.push(GridNode {
@@ -85,16 +91,36 @@ impl AStar {
             }
         }
 
-        self.nodes = nodes;
-    }
+        let obstacles_length = obstacles.len();
+        log!("Obstacle length {}", obstacles_length);
+        if obstacles_length > 0 {
+            for i in 0..(obstacles.len() / 5) {
+                log!("First iteration");
+                let start_index = i * 5;
+                let x = obstacles[start_index] as u16;
+                let obstacle_width = obstacles[start_index + 2] as u16;
+                if x + obstacle_width > width {
+                    continue;
+                }
 
-    pub fn set_weight(&mut self, x: u16, y: u16, weight: u32) -> () {
-        if x >= self.width || y >= self.height {
-            return;
+                let y = obstacles[start_index + 1] as u16;
+                let obstacle_height = obstacles[start_index + 3] as u16;
+                if y + obstacle_height > height {
+                    continue;
+                }
+
+                let weight = obstacles[start_index + 4];
+
+                for dy in 0..obstacle_height {
+                    for dx in 0..obstacle_width {
+                        let node_index = get_node_index(x + dx, y + dy, width);
+                        nodes[node_index].weight = weight;
+                    }
+                }
+            }
         }
 
-        let index = get_node_index(x, y, self.width);
-        self.nodes[index].weight = weight;
+        self.nodes = nodes;
     }
 
     pub fn find_path(&mut self, x1: u16, y1: u16, x2: u16, y2: u16) -> Option<Vec<Node>> {
@@ -418,7 +444,7 @@ mod tests {
         let width = 4;
         let height = 4;
         let expected_length = 16;
-        astar.set_dimensions(width, height);
+        astar.set_grid(width, height, &[]);
         assert_eq!(astar.nodes.len(), expected_length, "Lenght doesn`t add up.");
         for x in 0..(width - 1) {
             for y in 0..(height - 1) {
@@ -439,6 +465,105 @@ mod tests {
     }
 
     #[test]
+    fn obstacles_correctly_set_1() {
+        let mut astar = AStar {
+            nodes: vec![],
+            width: 0,
+            height: 0,
+        };
+        let width = 4;
+        let height = 4;
+        let expected_length = 16;
+        astar.set_grid(4, 4, &[1, 2, 1, 1, 3]);
+        let obstacle_index = get_node_index(1, 2, width);
+
+        assert_eq!(
+            astar.nodes[obstacle_index].weight, 3,
+            "Weight not correctly set. {:?}",
+            astar.nodes
+        );
+    }
+
+    #[test]
+    fn obstacles_correctly_set_2() {
+        let mut astar = AStar {
+            nodes: vec![],
+            width: 0,
+            height: 0,
+        };
+        let width = 4;
+        let height = 4;
+        let expected_length = 16;
+
+        astar.set_grid(4, 4, &[3, 3, 1, 1, 0]);
+        let obstacle_index = get_node_index(3, 3, width);
+
+        assert_eq!(
+            astar.nodes[obstacle_index].weight, 0,
+            "Weight not correctly set. {:?}",
+            astar.nodes
+        );
+    }
+
+    #[test]
+    fn obstacles_correctly_set_3() {
+        let mut astar = AStar {
+            nodes: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        let obstacle_1_x: u16 = 3;
+        let obstacle_1_y: u16 = 3;
+        let obstacle_1_width: u16 = 8;
+        let obstacle_1_height: u16 = 2;
+        let obstacle_2_x: u16 = 2;
+        let obstacle_2_y: u16 = 2;
+        let obstacle_2_width: u16 = 10;
+        let obstacle_2_height: u16 = 4;
+
+        astar.set_grid(
+            16,
+            16,
+            &[
+                obstacle_1_x as u32,
+                obstacle_1_y as u32,
+                obstacle_1_width as u32,
+                obstacle_1_height as u32,
+                0,
+                obstacle_2_x as u32,
+                obstacle_2_y as u32,
+                obstacle_2_width as u32,
+                obstacle_2_height as u32,
+                0,
+            ],
+        );
+        for dx in 0..obstacle_1_width {
+            for dy in 0..obstacle_1_height {
+                let obstacle_index = get_node_index(obstacle_1_x + dx, obstacle_1_y + dy, 16);
+
+                assert_eq!(
+                    astar.nodes[obstacle_index].weight, 0,
+                    "Weight not correctly set. {:?}",
+                    astar.nodes
+                );
+            }
+        }
+
+        for dx in 0..obstacle_2_width {
+            for dy in 0..obstacle_2_height {
+                let obstacle_index = get_node_index(obstacle_2_x + dx, obstacle_2_y + dy, 16);
+
+                assert_eq!(
+                    astar.nodes[obstacle_index].weight, 0,
+                    "Weight not correctly set. {:?}",
+                    astar.nodes
+                );
+            }
+        }
+    }
+
+    #[test]
     fn blocked_start_node_short_circuits() {
         let mut astar = AStar {
             nodes: vec![],
@@ -446,8 +571,7 @@ mod tests {
             height: 0,
         };
 
-        astar.set_dimensions(4, 4);
-        astar.set_weight(0, 0, 0);
+        astar.set_grid(4, 4, &[0, 0, 1, 1, 0]);
 
         assert!(astar.find_path(0, 0, 3, 3).is_none());
     }
@@ -460,8 +584,7 @@ mod tests {
             height: 0,
         };
 
-        astar.set_dimensions(4, 4);
-        astar.set_weight(3, 3, 0);
+        astar.set_grid(4, 4, &[3, 3, 1, 1, 0]);
 
         assert!(astar.find_path(0, 0, 3, 3).is_none());
     }
@@ -473,7 +596,7 @@ mod tests {
             width: 0,
             height: 0,
         };
-        astar.set_dimensions(1024, 1024);
+        astar.set_grid(1024, 1024, &[]);
         let path = astar.find_path(0, 0, 3, 3);
         assert_eq!(path.is_some(), true);
         let path = path.unwrap();
@@ -491,7 +614,7 @@ mod tests {
             width: 0,
             height: 0,
         };
-        astar.set_dimensions(900, 1635);
+        astar.set_grid(900, 1635, &[]);
         let path = astar.find_path(36, 132, 512, 142);
         assert_eq!(path.is_some(), true);
         let path = path.unwrap();
