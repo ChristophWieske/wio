@@ -2,24 +2,22 @@ import { Injectable } from '@angular/core';
 import { AStarWasm } from './a-star-wasm/a-star-wasm';
 import initAStarWasm from './a-star-wasm/pkg/a_star_rust';
 
-
 @Injectable({ providedIn: 'root' })
 export class PathFinderFactory {
-    private aStarWasmInitialized = false;
-    private initializing : Promise<void> | null = null;
+  private aStarWasmInitialized = false;
+  private initializing: Promise<void> | null = null;
 
   async createPathFinder(): Promise<PathFinder> {
-
     if (!this.aStarWasmInitialized && !this.initializing) {
       this.initializing = initAStarWasm(undefined).then(() => {
-          this.initializing = null;
-          this.aStarWasmInitialized = true;
+        this.initializing = null;
+        this.aStarWasmInitialized = true;
       });
     }
 
     if (this.initializing) {
-        await this.initializing;
-        this.aStarWasmInitialized = true;
+      await this.initializing;
+      this.aStarWasmInitialized = true;
     }
 
     return new AStarWasm();
@@ -27,11 +25,11 @@ export class PathFinderFactory {
 }
 
 export interface Position {
-  x: number; y: number;
+  x: number;
+  y: number;
 }
 
 export interface PathFinder {
-
   /**
    * Defines the weight of a node, which will influence the path finding.
    * @param x The x coordinate of the addressed node. Must be an integer.
@@ -43,7 +41,7 @@ export interface PathFinder {
    * "1" is the default weight.
    * Above "1" all weights are valid
    */
-  setWeight(x: number, y:number, weight: number): void;
+  setWeight(x: number, y: number, weight: number): void;
 
   /**
    * Sets the dimensions of the plane that shall contain the path.
@@ -51,7 +49,7 @@ export interface PathFinder {
    * @param width The width of the plane. If a decimal is provided it is rounded up, making the plane a little bigger.
    * @param height The height of the plane. If a decimal is provided it is rounded up, making the plane a little bigger.
    */
-  setDimensions(width:number, height:number): void;
+  setDimensions(width: number, height: number): void;
 
   /**
    * Tries to find a path within the search plane.

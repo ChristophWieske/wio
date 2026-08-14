@@ -8,5 +8,4 @@ import { FlowPath, FlowPathHost, FlowPathNode, Obstacle } from '../../../flow-pa
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {
-}
+export class App {}
