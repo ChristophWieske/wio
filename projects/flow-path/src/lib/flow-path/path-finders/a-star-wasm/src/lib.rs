@@ -71,12 +71,6 @@ pub fn main() {
 #[wasm_bindgen]
 impl AStar {
     pub fn set_grid(&mut self, width: u16, height: u16, obstacles: &[u32]) {
-        log!(
-            "width: {}, height: {}, obstacles: {:?}",
-            width,
-            height,
-            obstacles
-        );
         self.width = width;
         self.height = height;
         let length = width as usize * height as usize;
@@ -92,10 +86,8 @@ impl AStar {
         }
 
         let obstacles_length = obstacles.len();
-        log!("Obstacle length {}", obstacles_length);
         if obstacles_length > 0 {
             for i in 0..(obstacles.len() / 5) {
-                log!("First iteration");
                 let start_index = i * 5;
                 let x = obstacles[start_index] as u16;
                 let obstacle_width = obstacles[start_index + 2] as u16;
