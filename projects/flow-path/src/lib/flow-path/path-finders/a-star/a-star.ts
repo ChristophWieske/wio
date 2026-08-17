@@ -1,4 +1,4 @@
-import { SortedList } from '../../sorted-list';
+import { SortedList } from './sorted-list';
 import { PathObstacle } from '../a-star-wasm/a-star-wasm';
 import { PathFinder } from '../path-finder';
 
