@@ -64,15 +64,19 @@ export class Obstacle implements AfterViewInit {
     );
     resizeObserver.observe(this.host);
 
-    const positionObserver = new PositionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target !== this.host) {
-          continue;
-        }
+    const positionObserver = new PositionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.target !== this.host) {
+            continue;
+          }
 
-        this.nodeRect.set(entry.boundingClientRect);
-      }
-    });
+          this.nodeRect.set(entry.boundingClientRect);
+        }
+      },
+      // Todo: Wait for https://github.com/thednp/position-observer/issues/7
+      //{ root: this.flowPathHost.canvas() },
+    );
     positionObserver.observe(this.host);
 
     this.destroyRef.onDestroy(() => {

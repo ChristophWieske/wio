@@ -1,4 +1,5 @@
-import { Position, PathFinder } from '../flow-path/path-finders/path-finder';
+import { Signal } from '@angular/core';
+import { Position } from '../flow-path/path-finders/path-finder';
 
 export interface Obstacle extends Position {
   width: number;
@@ -7,11 +8,12 @@ export interface Obstacle extends Position {
 }
 
 export interface FlowPathHostApi {
+  canvas: Signal<HTMLCanvasElement | undefined>;
   rect(): DOMRect | null;
   position(id: string): Position | undefined;
-  getPathFinder(): PathFinder | undefined;
+  findPath(id: string, waypoints: (Position | undefined)[]): Position[];
+  clearPath(id: string): void;
   onGridChanged(listener: () => void): () => void;
   setPosition(id: string, node: Position | undefined): void;
   setObstacle(id: string, obstacles: Obstacle[] | undefined): void;
-  setPath(id: string, path: Position[] | undefined): void;
 }

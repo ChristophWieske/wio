@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Injectable, inject, Service } from '@angular/core';
+import { DestroyRef, Injectable, inject, Service, signal, Signal } from '@angular/core';
 import { PathFinderFactory, Position } from '../flow-path/path-finders/path-finder';
 import { FlowPathHostApi, Obstacle } from './flow-path-host-api';
 import { FlowPathHostEngine } from './flow-path-host-engine';
@@ -7,14 +7,15 @@ import { FlowPathHostEngine } from './flow-path-host-engine';
 @Service()
 export class GlobalFlowPathHost implements FlowPathHostApi {
   private readonly document = inject(DOCUMENT);
-  private readonly canvas = this.createCanvas();
   private readonly engine: FlowPathHostEngine;
+
+  readonly canvas = this.createCanvas();
 
   constructor() {
     const pathFinderFactory = inject(PathFinderFactory);
     this.engine = new FlowPathHostEngine({
       pathFinderFactory,
-      canvas: () => this.canvas,
+      canvas: this.canvas,
       fallbackSize: () => ({
         width: window.innerWidth,
         height: window.innerHeight,
@@ -32,8 +33,12 @@ export class GlobalFlowPathHost implements FlowPathHostApi {
     return this.engine.position(id);
   }
 
-  getPathFinder() {
-    return this.engine.getPathFinder();
+  findPath(id: string, waypoints: (Position | undefined)[]): Position[] {
+    return this.engine.findPath(id, waypoints);
+  }
+
+  clearPath(id: string): void {
+    this.engine.clearPath(id);
   }
 
   onGridChanged(listener: () => void): () => void {
@@ -48,11 +53,7 @@ export class GlobalFlowPathHost implements FlowPathHostApi {
     this.engine.setObstacle(id, obstacles);
   }
 
-  setPath(id: string, path: Position[] | undefined): void {
-    this.engine.setPath(id, path);
-  }
-
-  private createCanvas(): HTMLCanvasElement {
+  private createCanvas(): Signal<HTMLCanvasElement> {
     const canvas = this.document.createElement('canvas');
     canvas.style.position = 'fixed';
     canvas.style.inset = '0';
@@ -70,7 +71,7 @@ export class GlobalFlowPathHost implements FlowPathHostApi {
       canvas.remove();
     });
 
-    return canvas;
+    return signal(canvas);
   }
 
   private maintainRect() {

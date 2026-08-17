@@ -33,7 +33,7 @@ export class FlowPath implements OnDestroy {
   }
 
   ngOnDestroy() {
-    this.flowPathHost.setPath(this.id, undefined);
+    this.flowPathHost.clearPath(this.id);
   }
 
   private calculatePathOnChange(): void {
@@ -59,36 +59,7 @@ export class FlowPath implements OnDestroy {
   }
 
   private calculatePath(): void {
-    const nodes = this.nodes();
-    const combinedPath: Position[] = [];
-    const pathfinder = this.flowPathHost.getPathFinder();
-    const hostRect = this.flowPathHost.rect();
-    const maxX = Math.max(0, Math.ceil(hostRect?.width ?? 0) - 1);
-    const maxY = Math.max(0, Math.ceil(hostRect?.height ?? 0) - 1);
-
-    for (let i = 1; i < nodes.length; i++) {
-      const from = nodes[i - 1];
-      const to = nodes[i];
-
-      if (!from || !to || !pathfinder || !hostRect) {
-        this.flowPathHost.setPath(this.id, undefined);
-        this.path.set([]);
-        return;
-      }
-
-      const fromX = clampToGrid(Math.round(from.x), maxX);
-      const fromY = clampToGrid(Math.round(from.y), maxY);
-      const toX = clampToGrid(Math.round(to.x), maxX);
-      const toY = clampToGrid(Math.round(to.y), maxY);
-
-      const path = pathfinder.findPath(fromX, fromY, toX, toY);
-      if (path) {
-        combinedPath.push(...path);
-      }
-    }
-
-    this.path.set(combinedPath);
-    this.flowPathHost.setPath(this.id, combinedPath);
+    this.path.set(this.flowPathHost.findPath(this.id, this.nodes()));
   }
 
   private prepareNodes(): Signal<(Position | undefined)[]> {
@@ -96,15 +67,4 @@ export class FlowPath implements OnDestroy {
       equal: (a, b) => JSON.stringify(a) === JSON.stringify(b),
     });
   }
-}
-
-function clampToGrid(value: number, max: number): number {
-  if (value < 0) {
-    return 0;
-  }
-  if (value > max) {
-    return max;
-  }
-
-  return value;
 }

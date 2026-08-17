@@ -1,13 +1,13 @@
 
   <div class="container">
-    <wio-flow-path-node id="start" />
-    <div class="obstacle" wioObstacle [brimWidth]="20"></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20"></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20"></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20"></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20"></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20"></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20"></div>
+    <wio-flow-path-node id="start" cdkDrag/>
+    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
+    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
+    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
+    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
+    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
+    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
+    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
     <wio-flow-path-node id="end" cdkDrag />
   </div>
 
@@ -15,7 +15,8 @@
 
 
   <wio-flow-path-host class="explicit-container">
-      <wio-flow-path-node id="global-start" />
+      <wio-flow-path-node id="global-start" cdkDrag/>
+      <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
       <wio-flow-path-node id="global-end" cdkDrag />
       <wio-flow-path [positions]="['global-start', 'global-end']" />
   </wio-flow-path-host>
