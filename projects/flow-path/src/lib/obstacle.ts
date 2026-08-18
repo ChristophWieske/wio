@@ -9,7 +9,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import PositionObserver from '@thednp/position-observer';
+import { BoxObserver } from 'box-observer';
 import { Obstacle as ObstacleModel } from './flow-path-host/flow-path-host-api';
 import { injectFlowPathHost } from './flow-path-host/inject-flow-path-host';
 import { rectEqual } from './rect-equal';
@@ -27,28 +27,10 @@ export class Obstacle implements AfterViewInit {
   readonly weight = input(0);
   readonly brimWeight = input(0);
   readonly brimWidth = input(0);
-  readonly nodeRect = signal(this.host.getBoundingClientRect(), { equal: rectEqual });
-  readonly normalizedRect = computed(
-    () => {
-      const obsRect = this.nodeRect();
-      const hostRect = this.flowPathHost.rect();
-
-      if (!obsRect || !hostRect) {
-        return null;
-      }
-
-      return {
-        ...obsRect,
-        x: obsRect.x - hostRect.x,
-        y: obsRect.y - hostRect.y,
-        width: obsRect.width,
-        height: obsRect.height,
-      };
-    },
-    {
-      equal: rectEqual,
-    },
-  );
+  readonly nodeRect = signal<DOMRect | null>(null, { equal: rectEqual });
+  readonly normalizedRect = computed(() => this.nodeRect(), {
+    equal: rectEqual,
+  });
 
   constructor() {
     this.reportObstacle();
@@ -59,30 +41,21 @@ export class Obstacle implements AfterViewInit {
   }
 
   private observeRect(): void {
-    const resizeObserver = new ResizeObserver(() =>
-      this.nodeRect.set(this.host.getBoundingClientRect()),
-    );
-    resizeObserver.observe(this.host);
-
-    const positionObserver = new PositionObserver(
+    const boxObserver = new BoxObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.target !== this.host) {
             continue;
           }
 
-          this.nodeRect.set(entry.boundingClientRect);
+          this.nodeRect.set(entry.box);
         }
       },
-      // Todo: Wait for https://github.com/thednp/position-observer/issues/7
-      //{ root: this.flowPathHost.canvas() },
+      { root: this.flowPathHost.canvas() },
     );
-    positionObserver.observe(this.host);
+    boxObserver.observe(this.host);
 
-    this.destroyRef.onDestroy(() => {
-      resizeObserver.disconnect();
-      positionObserver.disconnect();
-    });
+    this.destroyRef.onDestroy(() => boxObserver.disconnect());
   }
 
   private reportObstacle(): void {
@@ -104,7 +77,7 @@ export class Obstacle implements AfterViewInit {
       const obstacles: ObstacleModel[] = [];
       const weight = this.weight();
       if (assesWeight(weight)) {
-        obstacles.push({ ...rect, weight });
+        obstacles.push({ x: rect.x, y: rect.y, width: rect.width, height: rect.height, weight });
       }
 
       const brimWeight = this.brimWeight();

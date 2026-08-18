@@ -9,7 +9,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import PositionObserver from '@thednp/position-observer';
+import { BoxObserver } from 'box-observer';
 import { injectFlowPathHost } from '../flow-path-host/inject-flow-path-host';
 import { rectEqual } from '../rect-equal';
 
@@ -24,23 +24,10 @@ export class FlowPathNode implements AfterViewInit {
   private readonly flowPathHost = injectFlowPathHost();
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly nodeRect = signal(this.host.getBoundingClientRect(), { equal: rectEqual });
+  readonly nodeRect = signal<DOMRect | null>(null, { equal: rectEqual });
   readonly normalizedRect = computed(
     () => {
-      const obsRect = this.nodeRect();
-      const hostRect = this.flowPathHost.rect();
-
-      if (!obsRect || !hostRect) {
-        return null;
-      }
-
-      return {
-        ...obsRect,
-        x: obsRect.x - hostRect.x,
-        y: obsRect.y - hostRect.y,
-        width: obsRect.width,
-        height: obsRect.height,
-      };
+      return this.nodeRect();
     },
     {
       equal: rectEqual,
@@ -54,34 +41,25 @@ export class FlowPathNode implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.observePosition();
+    this.observeBox();
   }
 
-  private observePosition(): void {
-    const resizeObserver = new ResizeObserver(() =>
-      this.nodeRect.set(this.host.getBoundingClientRect()),
-    );
-    resizeObserver.observe(this.host);
-
-    const positionObserver = new PositionObserver(
+  private observeBox(): void {
+    const boxObserver = new BoxObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.target !== this.host) {
             continue;
           }
 
-          this.nodeRect.set(entry.boundingClientRect);
+          this.nodeRect.set(entry.box);
         }
       },
-      // Todo: Wait for https://github.com/thednp/position-observer/issues/7
-      //{ root: this.flowPathHost.canvas() },
+      { root: this.flowPathHost.canvas() },
     );
-    positionObserver.observe(this.host);
+    boxObserver.observe(this.host);
 
-    this.destroyRef.onDestroy(() => {
-      resizeObserver.disconnect();
-      positionObserver.disconnect();
-    });
+    this.destroyRef.onDestroy(() => boxObserver.disconnect());
   }
 
   private reportPosition(): void {

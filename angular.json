@@ -28,10 +28,6 @@
               {
                 "glob": "**/*",
                 "input": "projects/test-app/public"
-              },
-              {
-                "glob": "**/*.wasm",
-                "input": "projects/flow-path/src/lib/flow-path/path-finders/a-star-wasm/pkg"
               }
             ],
             "styles": ["projects/test-app/src/styles.scss"]
@@ -99,6 +95,32 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "tsConfig": "projects/flow-path/tsconfig.spec.json"
+          }
+        }
+      }
+    },
+    "box-observer": {
+      "projectType": "library",
+      "root": "projects/box-observer",
+      "sourceRoot": "projects/box-observer/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/box-observer/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/box-observer/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/box-observer/tsconfig.spec.json"
           }
         }
       }

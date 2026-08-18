@@ -1,5 +1,6 @@
 import { PathFinder, Position } from '../path-finder';
-import { create_astar_instance } from './pkg/a_star_rust';
+import initAStarWasm, { create_astar_instance } from './pkg/a_star_rust';
+import wasmBytes from './pkg/a_star_rust_bg.wasm';
 
 export interface PathObstacle {
   x: number;
@@ -7,6 +8,18 @@ export interface PathObstacle {
   width: number;
   height: number;
   weight: number;
+}
+
+let initializingAStarWasm: Promise<void> | null = null;
+
+export async function initializeAStarWasm(): Promise<void> {
+  if (!initializingAStarWasm) {
+    initializingAStarWasm = initAStarWasm(wasmBytes).then(() => {
+      initializingAStarWasm = null;
+    });
+  }
+
+  await initializingAStarWasm;
 }
 
 export class AStarWasm implements PathFinder {

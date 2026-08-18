@@ -5,7 +5,8 @@
   "compilerOptions": {
     "noImplicitOverride": true,
     "paths": {
-      "flow-path": ["./dist/flow-path"]
+      "flow-path": ["./dist/flow-path"],
+      "box-observer": ["./dist/box-observer"]
     },
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
@@ -35,6 +36,12 @@
     },
     {
       "path": "./projects/flow-path/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/box-observer/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/box-observer/tsconfig.spec.json"
     }
   ]
 }

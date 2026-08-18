@@ -1,8 +1,8 @@
-import { Component, computed, DestroyRef, ElementRef, inject, viewChild } from '@angular/core';
-import PositionObserver from '@thednp/position-observer';
+import { AfterViewInit, Component, computed, DestroyRef, ElementRef, inject, viewChild } from '@angular/core';
 import { PathFinderFactory, Position } from '../flow-path/path-finders/path-finder';
 import { FlowPathHostApi, Obstacle } from './flow-path-host-api';
 import { FlowPathHostEngine } from './flow-path-host-engine';
+import { BoxObserver } from 'box-observer';
 
 @Component({
   selector: 'wio-flow-path-host',
@@ -69,14 +69,13 @@ export class FlowPathHost implements FlowPathHostApi {
     const observer = new ResizeObserver(update);
     observer.observe(this.host);
 
-    // That could probably been reworked (removed?) when https://github.com/thednp/position-observer/issues/7 is resolved,
-    // but for now we need to observe the position of the host element to update the rect when it moves.
-    const positionObserver = new PositionObserver(update);
-    positionObserver.observe(this.host);
+    // The host box still needs to be tracked while the element moves.
+    const boxObserver = new BoxObserver(update);
+    boxObserver.observe(this.host);
 
     this.destroyRef.onDestroy(() => {
       observer.disconnect();
-      positionObserver.disconnect();
+      boxObserver.disconnect();
     });
   }
 }

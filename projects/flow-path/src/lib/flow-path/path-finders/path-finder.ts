@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AStarWasm, PathObstacle } from './a-star-wasm/a-star-wasm';
-import initAStarWasm from './a-star-wasm/pkg/a_star_rust.js';
+import { initializeAStarWasm } from './a-star-wasm/a-star-wasm';
 
 @Injectable({ providedIn: 'root' })
 export class PathFinderFactory {
@@ -9,7 +9,7 @@ export class PathFinderFactory {
 
   async createPathFinder(): Promise<PathFinder> {
     if (!this.aStarWasmInitialized && !this.initializing) {
-      this.initializing = initAStarWasm(undefined).then(() => {
+      this.initializing = initializeAStarWasm().then(() => {
         this.initializing = null;
         this.aStarWasmInitialized = true;
       });
