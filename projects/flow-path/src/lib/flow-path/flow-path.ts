@@ -1,7 +1,6 @@
 import {
   Component,
   DestroyRef,
-  OnDestroy,
   Signal,
   computed,
   effect,
@@ -17,54 +16,29 @@ import { Position } from './path-finders/path-finder';
   imports: [],
   template: '',
 })
-export class FlowPath implements OnDestroy {
+export class FlowPath {
   static counter = 0;
   private readonly id = `path-${++FlowPath.counter}`;
   private readonly flowPathHost = injectFlowPathHost();
   private readonly destroyRef = inject(DestroyRef);
-  private queued = false;
 
   readonly positions = input.required<string[]>();
-  readonly nodes = this.prepareNodes();
-  readonly path = signal<Position[]>([]);
 
   constructor() {
-    this.calculatePathOnChange();
+    this.registerPath();
   }
 
-  ngOnDestroy() {
-    this.flowPathHost.clearPath(this.id);
-  }
+  private registerPath(): void {
+    effect((onCleanup) => {
+      onCleanup(() => this.flowPathHost.clearPath(this.id));
 
-  private calculatePathOnChange(): void {
-    effect(() => {
-      this.nodes();
-      this.queueCalculatePath();
-    });
+      const positions = this.positions();
+      if (positions.length < 2) {
+        this.flowPathHost.clearPath(this.id);
+        return;
+      }
 
-    const unsubscribe = this.flowPathHost.onGridChanged(() => this.queueCalculatePath());
-    this.destroyRef.onDestroy(unsubscribe);
-  }
-
-  private queueCalculatePath(): void {
-    if (this.queued) {
-      return;
-    }
-
-    this.queued = true;
-    queueMicrotask(() => {
-      this.queued = false;
-      this.calculatePath();
-    });
-  }
-
-  private calculatePath(): void {
-    this.path.set(this.flowPathHost.findPath(this.id, this.nodes()));
-  }
-
-  private prepareNodes(): Signal<(Position | undefined)[]> {
-    return computed(() => this.positions().map((id) => this.flowPathHost.position(id)), {
-      equal: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+      this.flowPathHost.registerPath(this.id, positions);
     });
   }
 }
