@@ -1,8 +1,18 @@
-import { AfterViewInit, Component, computed, DestroyRef, ElementRef, inject, viewChild } from '@angular/core';
-import { PathFinderFactory, Position } from '../flow-path/path-finders/path-finder';
-import { FlowPathHostApi, Obstacle } from './flow-path-host-api';
+import { DOCUMENT } from '@angular/common';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  Renderer2,
+  viewChild,
+} from '@angular/core';
+import { BehaviorSubject, filter, take } from 'rxjs';
+import { PathFinderFactory } from '../flow-path/path-finders/path-finder';
+import { FlowPathHostApi, PathDrawCallback } from './flow-path-host-api';
 import { FlowPathHostEngine } from './flow-path-host-engine';
-import { BoxObserver } from 'box-observer';
 
 @Component({
   selector: 'wio-flow-path-host',
@@ -11,71 +21,72 @@ import { BoxObserver } from 'box-observer';
   styleUrl: './flow-path-host.css',
 })
 export class FlowPathHost implements FlowPathHostApi {
-  private readonly host = inject(ElementRef).nativeElement as HTMLElement;
-  private readonly engine: FlowPathHostEngine;
-  private readonly _canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
-  private readonly destroyRef = inject(DestroyRef);
-
-  readonly canvas = computed(() => this._canvas()?.nativeElement);
+  private readonly engine = new BehaviorSubject<FlowPathHostEngine | undefined>(undefined);
+  private readonly pathFinderFactory = inject(PathFinderFactory);
+  private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
 
   constructor() {
-    const pathFinderFactory = inject(PathFinderFactory);
-    this.engine = new FlowPathHostEngine({
-      pathFinderFactory,
-      canvas: this.canvas,
-      fallbackSize: () => ({
-        width: this.host.clientWidth,
-        height: this.host.clientHeight,
-      }),
+    this.setupEngine();
+    inject(DestroyRef).onDestroy(() => {
+      this.engine.value?.dispose();
+      this.engine.complete();
     });
   }
 
-  ngAfterViewInit(): void {
-    this.maintainRect();
-  }
-
-  rect(): DOMRect | null {
-    return this.engine.rect();
-  }
-
-  position(id: string): Position | undefined {
-    return this.engine.position(id);
-  }
-
-  findPath(id: string, waypoints: (Position | undefined)[]): Position[] {
-    return this.engine.findPath(id, waypoints);
-  }
-
-  clearPath(id: string): void {
-    this.engine.clearPath(id);
-  }
-
-  onGridChanged(listener: () => void): () => void {
-    return this.engine.onGridChanged(listener);
-  }
-
-  setPosition(id: string, node: Position | undefined): void {
-    this.engine.setPosition(id, node);
-  }
-
-  setObstacle(id: string, obstacles: Obstacle[] | undefined): void {
-    this.engine.setObstacle(id, obstacles);
-  }
-
-  private maintainRect() {
-    const update = () => this.engine.setRect(this.host.getBoundingClientRect());
-    update();
-
-    const observer = new ResizeObserver(update);
-    observer.observe(this.host);
-
-    // The host box still needs to be tracked while the element moves.
-    const boxObserver = new BoxObserver(update);
-    boxObserver.observe(this.host);
-
-    this.destroyRef.onDestroy(() => {
-      observer.disconnect();
-      boxObserver.disconnect();
+  private setupEngine(): void {
+    const effectRef = effect(() => {
+      const canvas = this.canvas();
+      if (canvas?.nativeElement) {
+        const engine = new FlowPathHostEngine({
+          pathFinderFactory: this.pathFinderFactory,
+          canvas: canvas.nativeElement,
+        });
+        this.engine.next(engine);
+        effectRef.destroy();
+      }
     });
+  }
+
+  private whenEngineReady(callback: (engine: FlowPathHostEngine) => void) {
+    this.engine
+      .pipe(
+        filter((engine): engine is FlowPathHostEngine => engine !== undefined),
+        take(1),
+      )
+      .subscribe(callback);
+  }
+
+  registerNode(nodeId: string, nodeHost: Element): void {
+    this.whenEngineReady((engine) => engine.registerNode(nodeId, nodeHost));
+  }
+
+  clearNode(nodeId: string): void {
+    this.whenEngineReady((engine) => engine.clearNode(nodeId));
+  }
+  registerObstacle(
+    obstacleId: string,
+    obstacleHost: Element,
+    weight: number,
+    brimWidth: number,
+    brimWeight: number,
+  ): void {
+    this.whenEngineReady((engine) =>
+      engine.registerObstacle(obstacleId, obstacleHost, weight, brimWidth, brimWeight),
+    );
+  }
+  clearObstacle(obstacleId: string): void {
+    this.whenEngineReady((engine) => engine.clearObstacle(obstacleId));
+  }
+
+  registerPath(pathId: string, nodeIds: string[], callback: PathDrawCallback): void {
+    this.whenEngineReady((engine) => engine.registerPath(pathId, nodeIds, callback));
+  }
+
+  clearPath(pathId: string) {
+    this.whenEngineReady((engine) => engine.clearPath(pathId));
+  }
+
+  queueDraw(): void {
+    this.whenEngineReady((engine) => engine.queueForceRedraw());
   }
 }

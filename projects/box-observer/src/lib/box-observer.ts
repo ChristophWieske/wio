@@ -12,7 +12,10 @@ export class BoxObserver {
   private readonly root: Element;
   private readonly targets = new Map<Element, DOMRect | undefined | null>();
 
-  constructor(private readonly callback: (entries: BoxObserverEntry[]) => void, options?: BoxObserverOptions) {
+  constructor(
+    private readonly callback: (entries: BoxObserverEntry[]) => void,
+    options?: BoxObserverOptions,
+  ) {
     this.root = options?.root ?? document.documentElement;
   }
 
@@ -66,7 +69,10 @@ export class BoxObserver {
       );
 
     // #2: Now emit all updates.
-    this.callback(updates);
+    if (updates.length > 0) {
+      updates.forEach((entry) => this.targets.set(entry.target, entry.box));
+      this.callback(updates);
+    }
 
     // #3: Queue the next run.
     requestAnimationFrame(() => this.run());

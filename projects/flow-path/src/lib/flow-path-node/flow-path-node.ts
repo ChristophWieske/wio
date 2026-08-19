@@ -8,8 +8,8 @@ import {
   inject,
   input,
   signal,
+  Injector,
 } from '@angular/core';
-import { BoxObserver } from 'box-observer';
 import { injectFlowPathHost } from '../flow-path-host/inject-flow-path-host';
 import { rectEqual } from '../rect-equal';
 
@@ -19,69 +19,26 @@ import { rectEqual } from '../rect-equal';
   template: '',
   styleUrl: './flow-path-node.css',
 })
-export class FlowPathNode implements AfterViewInit {
+export class FlowPathNode {
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
   private readonly flowPathHost = injectFlowPathHost();
-  private readonly destroyRef = inject(DestroyRef);
-
-  readonly nodeRect = signal<DOMRect | null>(null, { equal: rectEqual });
-  readonly normalizedRect = computed(
-    () => {
-      return this.nodeRect();
-    },
-    {
-      equal: rectEqual,
-    },
-  );
 
   readonly id = input.required<string>();
 
   constructor() {
-    this.reportPosition();
+    this.registerNode();
   }
 
-  ngAfterViewInit(): void {
-    this.observeBox();
-  }
-
-  private observeBox(): void {
-    const boxObserver = new BoxObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.target !== this.host) {
-            continue;
-          }
-
-          this.nodeRect.set(entry.box);
-        }
-      },
-      { root: this.flowPathHost.canvas() },
-    );
-    boxObserver.observe(this.host);
-
-    this.destroyRef.onDestroy(() => boxObserver.disconnect());
-  }
-
-  private reportPosition(): void {
+  private registerNode(): void {
     let latestId: string | undefined;
     effect((onCleanup) => {
-      onCleanup(() => this.flowPathHost.setPosition(this.id(), undefined));
+      onCleanup(() => this.flowPathHost.clearNode(this.id()));
 
-      if (this.id() !== latestId && latestId !== undefined) {
-        this.flowPathHost.setPosition(latestId, undefined);
-      }
-      latestId = this.id();
-
-      const rect = this.normalizedRect();
-      if (!rect) {
-        this.flowPathHost.setPosition(this.id(), undefined);
-        return;
+      if (latestId !== undefined) {
+        this.flowPathHost.clearNode(this.id());
       }
 
-      this.flowPathHost.setPosition(this.id(), {
-        x: Math.round(rect.x + rect.width / 2),
-        y: Math.round(rect.y + rect.height / 2),
-      });
+      this.flowPathHost.registerNode(this.id(), this.host);
     });
   }
 }

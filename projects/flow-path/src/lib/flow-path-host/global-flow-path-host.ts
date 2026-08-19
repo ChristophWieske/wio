@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Injectable, inject, Service, signal, Signal } from '@angular/core';
-import { PathFinderFactory, Position } from '../flow-path/path-finders/path-finder';
-import { FlowPathHostApi, Obstacle } from './flow-path-host-api';
+import { DestroyRef, inject, Service } from '@angular/core';
+import { PathFinderFactory } from '../flow-path/path-finders/path-finder';
+import { FlowPathHostApi, PathDrawCallback } from './flow-path-host-api';
 import { FlowPathHostEngine } from './flow-path-host-engine';
 
 @Service()
@@ -16,44 +16,40 @@ export class GlobalFlowPathHost implements FlowPathHostApi {
     this.engine = new FlowPathHostEngine({
       pathFinderFactory,
       canvas: this.canvas,
-      fallbackSize: () => ({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      }),
     });
-
-    this.maintainRect();
+    inject(DestroyRef).onDestroy(() => {
+      this.engine.dispose();
+    });
   }
 
-  rect(): DOMRect | null {
-    return this.engine.rect();
+  registerNode(nodeId: string, nodeHost: Element): void {
+    this.engine.registerNode(nodeId, nodeHost);
+  }
+  clearNode(nodeId: string): void {
+    this.engine.clearNode(nodeId);
+  }
+  registerObstacle(
+    obstacleId: string,
+    obstacleHost: Element,
+    weight: number,
+    brimWidth: number,
+    brimWeight: number,
+  ): void {
+    this.engine.registerObstacle(obstacleId, obstacleHost, weight, brimWidth, brimWeight);
+  }
+  clearObstacle(obstacleId: string): void {
+    this.engine.clearObstacle(obstacleId);
   }
 
-  position(id: string): Position | undefined {
-    return this.engine.position(id);
+  registerPath(pathId: string, nodeIds: string[], callback: PathDrawCallback): void {
+    this.engine.registerPath(pathId, nodeIds, callback);
   }
 
-  findPath(id: string, waypoints: (Position | undefined)[]): Position[] {
-    return this.engine.findPath(id, waypoints);
+  clearPath(pathId: string) {
+    this.engine.clearPath(pathId);
   }
 
-  clearPath(id: string): void {
-    this.engine.clearPath(id);
-  }
-
-  onGridChanged(listener: () => void): () => void {
-    return this.engine.onGridChanged(listener);
-  }
-
-  setPosition(id: string, node: Position | undefined): void {
-    this.engine.setPosition(id, node);
-  }
-
-  setObstacle(id: string, obstacles: Obstacle[] | undefined): void {
-    this.engine.setObstacle(id, obstacles);
-  }
-
-  private createCanvas(): Signal<HTMLCanvasElement> {
+  private createCanvas(): HTMLCanvasElement {
     const canvas = this.document.createElement('canvas');
     canvas.style.position = 'fixed';
     canvas.style.inset = '0';
@@ -71,17 +67,10 @@ export class GlobalFlowPathHost implements FlowPathHostApi {
       canvas.remove();
     });
 
-    return signal(canvas);
+    return canvas;
   }
 
-  private maintainRect() {
-    const update = () =>
-      this.engine.setRect(new DOMRect(0, 0, window.innerWidth, window.innerHeight));
-
-    update();
-    window.addEventListener('resize', update);
-    inject(DestroyRef).onDestroy(() => {
-      window.removeEventListener('resize', update);
-    });
+  queueDraw(): void {
+    this.engine.queueForceRedraw();
   }
 }

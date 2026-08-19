@@ -1,6 +1,6 @@
 import { PathFinder, Position } from '../path-finder';
 import initAStarWasm, { create_astar_instance } from './pkg/a_star_rust';
-import wasmBytes from './pkg/a_star_rust_bg.wasm';
+import wasmBytes from './pkg/a_star_rust_bg.wasm-bytes';
 
 export interface PathObstacle {
   x: number;

@@ -8,7 +8,7 @@ const input = path.resolve(
 );
 const output = path.resolve(
   __dirname,
-  '../lib/flow-path/path-finders/a-star-wasm/pkg/a_star_rust_bg.wasm.ts',
+  '../lib/flow-path/path-finders/a-star-wasm/pkg/a_star_rust_bg.wasm-bytes.ts',
 );
 
 const bytes = fs.readFileSync(input);

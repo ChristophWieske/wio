@@ -1,6 +1,6 @@
 
   <div class="container">
-    <wio-flow-path-node id="start" cdkDrag/>
+    <wio-flow-path-node id="global-start" cdkDrag/>
     <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
     <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
     <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
@@ -8,15 +8,32 @@
     <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
     <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
     <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-    <wio-flow-path-node id="end" cdkDrag />
+    <wio-flow-path-node id="global-end" cdkDrag />
   </div>
 
-  <wio-flow-path [positions]="['start', 'end']" />
+  <wio-flow-path [positions]="['global-start', 'global-end']" />
 
 
+  <div class="controls">
+
+    <mat-label>Line Width</mat-label>
+    <mat-slider min="1" max="20" step=".1">
+        <input matSliderThumb [(ngModel)]="lineWidth">
+    </mat-slider>
+
+      <mat-form-field>
+        <mat-label>Line Color</mat-label>
+        <input matInput [(ngModel)]="color" placeholder="Enter a color">
+      </mat-form-field>
+
+      <mat-form-field>
+          <mat-label>Dash Array</mat-label>
+          <input matInput [(ngModel)]="dash" placeholder="Enter a dash array">
+      </mat-form-field>
+  </div>
   <wio-flow-path-host class="explicit-container">
-      <wio-flow-path-node id="global-start" cdkDrag/>
+      <wio-flow-path-node id="start" cdkDrag/>
       <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-      <wio-flow-path-node id="global-end" cdkDrag />
-      <wio-flow-path [positions]="['global-start', 'global-end']" />
+      <wio-flow-path-node id="end" cdkDrag />
+      <wio-flow-path [positions]="['start', 'end']" [color]="color()" [width]="lineWidth()" [dash]="dashArray()"/>
   </wio-flow-path-host>
