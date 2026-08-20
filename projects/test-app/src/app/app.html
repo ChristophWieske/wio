@@ -1,39 +1,227 @@
+<div class="demo-shell">
+  <section class="hero">
+    <div class="hero__copy">
+      <p class="eyebrow">Wio FlowPath</p>
+      <h1>Professional route demos for obstacle-aware UI flows.</h1>
+      <p class="hero__lead">
+        This demo page shows how FlowPath keeps connections readable while cards and blockers
+        move in real time. Drag anything in either surface to watch the lines reroute instantly.
+      </p>
 
-  <div class="container">
-    <wio-flow-path-node id="global-start" cdkDrag/>
-    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-    <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-    <wio-flow-path-node id="global-end" cdkDrag />
-  </div>
+      <div class="hero__chips">
+        <span class="chip">Angular standalone</span>
+        <span class="chip">Drag-enabled nodes</span>
+        <span class="chip">Automatic rerouting</span>
+      </div>
+    </div>
 
-  <wio-flow-path [positions]="['global-start', 'global-end']" />
+    <div class="hero__panel">
+      <div class="metric">
+        <span class="metric__value">2</span>
+        <span class="metric__label">host modes on display</span>
+      </div>
+      <div class="metric">
+        <span class="metric__value">5+</span>
+        <span class="metric__label">live obstacles to route around</span>
+      </div>
+      <div class="metric">
+        <span class="metric__value">100%</span>
+        <span class="metric__label">runtime-styled connections</span>
+      </div>
+    </div>
+  </section>
 
+  <section class="capabilities">
+    @for (capability of capabilities; track capability.title) {
+      <article class="capability-card">
+        <h2>{{ capability.title }}</h2>
+        <p>{{ capability.description }}</p>
+      </article>
+    }
+  </section>
 
-  <div class="controls">
+  <section class="showcase-card">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Implicit host mode</p>
+        <h2>Global overlay with almost no setup</h2>
+      </div>
+      <p>
+        Use plain <code>wio-flow-path</code> and <code>wio-flow-path-node</code> elements anywhere
+        on the page and let the library manage a shared fullscreen canvas automatically.
+      </p>
+    </div>
 
-    <mat-label>Line Width</mat-label>
-    <mat-slider min="1" max="20" step=".1">
-        <input matSliderThumb [(ngModel)]="lineWidth">
-    </mat-slider>
+    <div class="demo-surface demo-surface--implicit global-demo__surface">
+      @for (card of implicitCards; track card.title) {
+        <article
+          class="demo-card demo-card--node"
+          cdkDrag
+          cdkDragBoundary=".global-demo__surface"
+          wioObstacle
+          [brimWidth]="28"
+          [style.left.px]="card.x"
+          [style.top.px]="card.y"
+        >
+          <span class="demo-card__eyebrow">{{ card.eyebrow }}</span>
+          <h3>{{ card.title }}</h3>
+          <p>{{ card.description }}</p>
+
+          @for (port of card.ports; track port.id) {
+            <wio-flow-path-node
+              class="demo-port"
+              [class.demo-port--left]="port.side === 'left'"
+              [class.demo-port--right]="port.side === 'right'"
+              [id]="port.id"
+            />
+          }
+        </article>
+      }
+
+      @for (obstacle of implicitObstacles; track obstacle.title) {
+        <article
+          class="demo-card demo-card--obstacle"
+          cdkDrag
+          cdkDragBoundary=".global-demo__surface"
+          wioObstacle
+          [brimWidth]="24"
+          [style.left.px]="obstacle.x"
+          [style.top.px]="obstacle.y"
+          [style.width.px]="obstacle.width"
+        >
+          <span class="demo-card__eyebrow">Blocker</span>
+          <h3>{{ obstacle.title }}</h3>
+          <p>{{ obstacle.description }}</p>
+        </article>
+      }
+    </div>
+
+    @for (path of implicitPaths; track path.id) {
+      <wio-flow-path [positions]="path.positions" color="#7c3aed" [width]="4" [dash]="[14, 10]" />
+    }
+  </section>
+
+  <section class="workspace">
+    <div class="showcase-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Explicit host mode</p>
+          <h2>Bound routing to a single workspace</h2>
+        </div>
+        <p>
+          Wrap the scene in <code>wio-flow-path-host</code> when you want constrained drawing,
+          local pathfinding, and a cleaner performance profile for dense layouts.
+        </p>
+      </div>
+
+      <wio-flow-path-host class="demo-surface demo-surface--explicit explicit-demo__surface">
+        @for (card of explicitCards; track card.title) {
+          <article
+            class="demo-card demo-card--node"
+            cdkDrag
+            cdkDragBoundary=".explicit-demo__surface"
+            wioObstacle
+            [brimWidth]="28"
+            [style.left.px]="card.x"
+            [style.top.px]="card.y"
+          >
+            <span class="demo-card__eyebrow">{{ card.eyebrow }}</span>
+            <h3>{{ card.title }}</h3>
+            <p>{{ card.description }}</p>
+
+            @for (port of card.ports; track port.id) {
+              <wio-flow-path-node
+                class="demo-port"
+                [class.demo-port--left]="port.side === 'left'"
+                [class.demo-port--right]="port.side === 'right'"
+                [id]="port.id"
+              />
+            }
+          </article>
+        }
+
+        @for (obstacle of explicitObstacles; track obstacle.title) {
+          <article
+            class="demo-card demo-card--obstacle"
+            cdkDrag
+            cdkDragBoundary=".explicit-demo__surface"
+            wioObstacle
+            [brimWidth]="24"
+            [style.left.px]="obstacle.x"
+            [style.top.px]="obstacle.y"
+            [style.width.px]="obstacle.width"
+          >
+            <span class="demo-card__eyebrow">Bounded blocker</span>
+            <h3>{{ obstacle.title }}</h3>
+            <p>{{ obstacle.description }}</p>
+          </article>
+        }
+
+        @for (path of explicitPaths; track path.id) {
+          <wio-flow-path
+            [positions]="path.positions"
+            [color]="color()"
+            [width]="lineWidth()"
+            [dash]="dashArray()"
+          />
+        }
+      </wio-flow-path-host>
+    </div>
+
+    <aside class="control-panel">
+      <div class="section-heading section-heading--compact">
+        <div>
+          <p class="eyebrow">Live styling controls</p>
+          <h2>Tune the explicit demo paths</h2>
+        </div>
+        <p>Apply a preset or customize the stroke directly.</p>
+      </div>
+
+      <div class="control-panel__summary">
+        <span class="control-panel__label">Current stroke</span>
+        <strong>{{ strokeSummary() }}</strong>
+      </div>
+
+      <div class="control-panel__field">
+        <div class="control-panel__row">
+          <mat-label>Line width</mat-label>
+          <span>{{ lineWidthLabel() }}</span>
+        </div>
+        <mat-slider min="1" max="18" step="0.5">
+          <input matSliderThumb [(ngModel)]="lineWidth" />
+        </mat-slider>
+      </div>
+
+      <div class="control-panel__field control-panel__field--color">
+        <label class="color-swatch">
+          <span>Color swatch</span>
+          <input [(ngModel)]="color" type="color" />
+        </label>
+
+        <mat-form-field>
+          <mat-label>Line color</mat-label>
+          <input matInput [(ngModel)]="color" placeholder="#2563eb" />
+        </mat-form-field>
+      </div>
 
       <mat-form-field>
-        <mat-label>Line Color</mat-label>
-        <input matInput [(ngModel)]="color" placeholder="Enter a color">
+        <mat-label>Dash array</mat-label>
+        <input matInput [(ngModel)]="dash" placeholder="10,10" />
       </mat-form-field>
 
-      <mat-form-field>
-          <mat-label>Dash Array</mat-label>
-          <input matInput [(ngModel)]="dash" placeholder="Enter a dash array">
-      </mat-form-field>
-  </div>
-  <wio-flow-path-host class="explicit-container">
-      <wio-flow-path-node id="start" cdkDrag/>
-      <div class="obstacle" wioObstacle [brimWidth]="20" cdkDrag></div>
-      <wio-flow-path-node id="end" cdkDrag />
-      <wio-flow-path [positions]="['start', 'end']" [color]="color()" [width]="lineWidth()" [dash]="dashArray()"/>
-  </wio-flow-path-host>
+      <div class="control-panel__summary">
+        <span class="control-panel__label">Dash preview</span>
+        <strong>{{ dashPreview() }}</strong>
+      </div>
+
+      <div class="preset-list">
+        @for (preset of strokePresets; track preset.name) {
+          <button class="preset-button" type="button" (click)="applyPreset(preset)">
+            <span class="preset-button__title">{{ preset.name }}</span>
+            <span class="preset-button__description">{{ preset.description }}</span>
+          </button>
+        }
+      </div>
+    </aside>
+  </section>
+</div>

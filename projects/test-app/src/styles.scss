@@ -36,4 +36,378 @@ body {
   margin: 0;
   height: 100%;
 }
-/* You can add global styles to this file, and also import other style files */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background:
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.16), transparent 22%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 48%, #f8fafc 100%);
+  font-family:
+    Inter,
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
+}
+
+.demo-shell {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.hero,
+.workspace {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.hero {
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  align-items: stretch;
+}
+
+.hero__copy,
+.hero__panel,
+.showcase-card,
+.control-panel,
+.capability-card {
+  background: color-mix(in srgb, var(--mat-sys-surface) 88%, white 12%);
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 70%, transparent 30%);
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+}
+
+.hero__copy,
+.hero__panel,
+.showcase-card,
+.control-panel {
+  padding: 1.5rem;
+}
+
+.hero__copy {
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 32%),
+    linear-gradient(135deg, rgba(124, 58, 237, 0.1), transparent 40%),
+    color-mix(in srgb, var(--mat-sys-surface) 90%, white 10%);
+}
+
+.hero__copy h1,
+.section-heading h2,
+.capability-card h2,
+.demo-card h3 {
+  margin: 0;
+}
+
+.hero__lead,
+.section-heading p,
+.capability-card p,
+.demo-card p {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.eyebrow,
+.demo-card__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+  color: #4f46e5;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero__chips,
+.capabilities,
+.preset-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hero__chips {
+  grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
+  margin-top: 1.5rem;
+}
+
+.chip,
+.control-panel__summary {
+  border-radius: 999px;
+  border: 1px solid rgba(79, 70, 229, 0.16);
+  background: rgba(79, 70, 229, 0.08);
+}
+
+.chip {
+  padding: 0.7rem 1rem;
+  color: #3730a3;
+  font-weight: 600;
+}
+
+.hero__panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.metric {
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.metric__value {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--mat-sys-primary);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.metric__label {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.capabilities,
+.workspace {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.capability-card {
+  padding: 1.2rem 1.25rem;
+}
+
+.showcase-card {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.workspace > .showcase-card {
+  grid-column: span 2;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.section-heading > p {
+  max-width: 34rem;
+  margin: 0;
+}
+
+.section-heading--compact {
+  display: grid;
+}
+
+.section-heading code {
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--mat-sys-on-surface);
+}
+
+.demo-surface {
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.11) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.96));
+  background-size:
+    32px 32px,
+    32px 32px,
+    100% 100%;
+}
+
+.demo-surface--implicit::after,
+.demo-surface--explicit::after {
+  content: 'Drag cards or blockers';
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: white;
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+
+.demo-card {
+  position: absolute;
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem 1rem 1rem 1.05rem;
+  border-radius: 18px;
+  cursor: move;
+  user-select: none;
+}
+
+.demo-card--node {
+  width: 220px;
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 30px rgba(37, 99, 235, 0.1);
+}
+
+.demo-card--obstacle {
+  border: 1px dashed rgba(244, 114, 182, 0.5);
+  background: rgba(253, 242, 248, 0.95);
+}
+
+.demo-card h3 {
+  font-size: 1rem;
+}
+
+.demo-card p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.demo-port {
+  position: absolute;
+  top: calc(50% - 6px);
+  width: 12px;
+  height: 12px;
+  border-width: 3px;
+  border-color: #4f46e5;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
+}
+
+.demo-port--left {
+  left: -10px;
+}
+
+.demo-port--right {
+  right: -10px;
+}
+
+.control-panel {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.control-panel__field,
+.color-swatch,
+.preset-button {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.control-panel__field {
+  padding: 1rem;
+}
+
+.control-panel__field--color {
+  display: grid;
+  gap: 1rem;
+}
+
+.control-panel__row,
+.control-panel__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.control-panel__summary {
+  padding: 0.8rem 1rem;
+}
+
+.control-panel__label {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.color-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  font-weight: 600;
+}
+
+.color-swatch input {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.preset-button {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.preset-button:hover {
+  border-color: rgba(79, 70, 229, 0.35);
+  transform: translateY(-1px);
+}
+
+.preset-button__title {
+  font-weight: 700;
+}
+
+.preset-button__description {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+@media (max-width: 1080px) {
+  .hero,
+  .capabilities,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace > .showcase-card {
+    grid-column: auto;
+  }
+
+  .section-heading {
+    display: grid;
+  }
+}
+
+@media (max-width: 720px) {
+  .demo-shell {
+    padding: 1rem;
+  }
+
+  .hero__chips {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-surface {
+    min-height: 560px;
+  }
+}
