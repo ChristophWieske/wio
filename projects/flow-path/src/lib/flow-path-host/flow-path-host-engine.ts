@@ -397,6 +397,8 @@ export class FlowPathHostEngine {
             ...entry.box,
             x: entry.box.x - offsetX,
             y: entry.box.y - offsetY,
+            width: entry.box.width,
+            height: entry.box.height,
             weight: entry.weight,
           },
         ];
