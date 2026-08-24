@@ -1,64 +1,81 @@
-# BoxObserver
+# @wieske-io/box-observer
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.0.
+A lightweight DOM box observer for UI libraries and canvas overlays.
 
-## Code scaffolding
+`BoxObserver` tracks the bounding boxes of DOM elements and emits updates whenever an element's position or size changes. It is designed for cases where you need precise, low-overhead geometry updates without building a full layout engine.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Why use it?
 
-```bash
-ng generate component component-name
-```
+- Observe multiple elements with a single callback
+- Keeps track of previous and current DOMRect values
+- Detects changes in position and dimensions
+- Works well for overlays, visual tools, pathfinding, and custom rendering systems
+- Lightweight and focused on geometry updates
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Features
 
-```bash
-ng generate --help
-```
+- Observes any DOM element
+- Supports a root container via `BoxObserverOptions.root`
+  - Emits normalized `DOMRect` data relative to the configured root, which allows relative position tracking
+  - Only raises an update when the target's relative position to the root has changed, avoiding unnecessary notifications for unaffected movement
+- Uses `requestAnimationFrame` to continuously reconcile element bounds
+- Keeps a previous box snapshot for easy diffing
 
-## Building
-
-To build the library, run:
-
-```bash
-ng build box-observer
-```
-
-This command will compile your project, and the build artifacts will be placed in the `dist/` directory.
-
-### Publishing the Library
-
-Once the project is built, you can publish your library by following these steps:
-
-1. Navigate to the `dist` directory:
-
-   ```bash
-   cd dist/box-observer
-   ```
-
-2. Run the `npm publish` command to publish your library to the npm registry:
-   ```bash
-   npm publish
-   ```
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Installation
 
 ```bash
-ng test
+npm install @wieske-io/box-observer
 ```
 
-## Running end-to-end tests
+## Quick start
 
-For end-to-end (e2e) testing, run:
+```ts
+import { BoxObserver, BoxObserverEntry } from '@wieske-io/box-observer';
 
-```bash
-ng e2e
+const observer = new BoxObserver((entries: BoxObserverEntry[]) => {
+  for (const entry of entries) {
+    console.log(entry.target, entry.box);
+  }
+});
+
+const target = document.getElementById('node');
+if (target) {
+  observer.observe(target);
+}
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## API
 
-## Additional Resources
+```ts
+interface BoxObserverOptions {
+  root?: Element | null;
+}
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+interface BoxObserverEntry {
+  target: Element;
+  previousBox: DOMRect | null | undefined;
+  box: DOMRect | null;
+}
+
+class BoxObserver {
+  constructor(
+    callback: (entries: BoxObserverEntry[]) => void,
+    options?: BoxObserverOptions,
+  );
+
+  observe(target: Element): void;
+  unobserve(target: Element): void;
+  disconnect(): void;
+}
+```
+
+## Use cases
+
+- Tracking node positions in interactive diagrams
+- Updating canvas overlays based on DOM layout changes
+- Triggering recalculation for pathfinding or collision systems
+- Building custom editor or visualization components
+
+## License
+
+MIT

@@ -3,7 +3,7 @@ import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormField, MatInput, MatLabel, MatSuffix } from '@angular/material/input';
 import { MatSlider, MatSliderThumb } from '@angular/material/slider';
-import { FlowPath, FlowPathHost, FlowPathNode, Obstacle } from '../../../flow-path/src/public-api';
+import { FlowPath, FlowPathHost, FlowPathNode, Obstacle } from '@wieske-io/flow-path';
 
 type DemoPort = {
   id: string;

@@ -1,4 +1,4 @@
-import { BoxObserver } from '../../../../box-observer/src/public-api';
+import { BoxObserver } from '@wieske-io/box-observer';
 import { PathFinder, PathFinderFactory, Position } from '../flow-path/path-finders/path-finder';
 import { PathDrawCallback } from './flow-path-host-api';
 

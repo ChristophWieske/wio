@@ -7,30 +7,30 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "test-app": {
+    "flow-path-demo": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
           "style": "scss"
         }
       },
-      "root": "projects/test-app",
-      "sourceRoot": "projects/test-app/src",
+      "root": "projects/flow-path-demo",
+      "sourceRoot": "projects/flow-path-demo/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/test-app/src/main.ts",
-            "tsConfig": "projects/test-app/tsconfig.app.json",
+            "browser": "projects/flow-path-demo/src/main.ts",
+            "tsConfig": "projects/flow-path-demo/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/test-app/public"
+                "input": "projects/flow-path-demo/public"
               }
             ],
-            "styles": ["projects/test-app/src/styles.scss"]
+            "styles": ["projects/flow-path-demo/src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -60,10 +60,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "test-app:build:production"
+              "buildTarget": "flow-path-demo:build:production"
             },
             "development": {
-              "buildTarget": "test-app:build:development"
+              "buildTarget": "flow-path-demo:build:development"
             }
           },
           "defaultConfiguration": "development"
