@@ -127,15 +127,49 @@ impl AStar {
         }
 
         let start_node_index = get_node_index(x1, y1, self.width);
-        let start_node = &self.nodes[start_node_index];
-
         let end_node_index = get_node_index(x2, y2, self.width);
-        let end_node = &self.nodes[end_node_index];
+        let effective_start_node_index = match self.resolve_valid_node_index(start_node_index) {
+            Some(index) => index,
+            None => return None,
+        };
+        let effective_end_node_index = match self.resolve_valid_node_index(end_node_index) {
+            Some(index) => index,
+            None => return None,
+        };
 
-        if start_node.weight == 0 || end_node.weight == 0 {
-            return None;
+        let core_path = match self.find_path_between(effective_start_node_index, effective_end_node_index)
+        {
+            Some(path) => path,
+            None => return None,
+        };
+
+        let mut path = Vec::with_capacity(core_path.len() + 2);
+        if start_node_index != effective_start_node_index {
+            let start_node = self.nodes[start_node_index];
+            path.push(Node {
+                x: start_node.x,
+                y: start_node.y,
+            });
         }
 
+        for node in core_path {
+            path.push(node);
+        }
+
+        if end_node_index != effective_end_node_index {
+            let end_node = self.nodes[end_node_index];
+            path.push(Node {
+                x: end_node.x,
+                y: end_node.y,
+            });
+        }
+
+        return Some(path);
+    }
+
+    fn find_path_between(&self, start_node_index: usize, end_node_index: usize) -> Option<Vec<Node>> {
+        let start_node = &self.nodes[start_node_index];
+        let end_node = &self.nodes[end_node_index];
         let mut g_score = vec![u32::MAX; self.width as usize * self.height as usize];
         g_score[start_node_index] = 0;
         let mut candidates = vec![];
@@ -207,7 +241,45 @@ impl AStar {
                 candidates.push(next_candidate);
             }
         }
-        return Some(vec![]);
+        return None;
+    }
+
+    fn resolve_valid_node_index(&self, node_index: usize) -> Option<usize> {
+        if self.nodes[node_index].weight > 0 {
+            return Some(node_index);
+        }
+
+        self.find_nearest_valid_straight_node_index(node_index)
+    }
+
+    fn find_nearest_valid_straight_node_index(&self, node_index: usize) -> Option<usize> {
+        let node = self.nodes[node_index];
+        let max_distance = self.width.max(self.height) as i32;
+
+        for distance in 1..=max_distance {
+            let mut any_direction_in_bounds = false;
+
+            for direction in DIRECTION_VECTORS {
+                let x = node.x as i32 + direction.0 as i32 * distance;
+                let y = node.y as i32 + direction.1 as i32 * distance;
+
+                if x < 0 || y < 0 || x >= self.width as i32 || y >= self.height as i32 {
+                    continue;
+                }
+                any_direction_in_bounds = true;
+
+                let candidate_index = get_node_index(x as u16, y as u16, self.width);
+                if self.nodes[candidate_index].weight > 0 {
+                    return Some(candidate_index);
+                }
+            }
+
+            if !any_direction_in_bounds {
+                return None;
+            }
+        }
+
+        None
     }
 }
 
@@ -556,7 +628,7 @@ mod tests {
     }
 
     #[test]
-    fn blocked_start_node_short_circuits() {
+    fn blocked_start_node_gets_connector_path() {
         let mut astar = AStar {
             nodes: vec![],
             width: 0,
@@ -565,11 +637,20 @@ mod tests {
 
         astar.set_grid(4, 4, &[0, 0, 1, 1, 0]);
 
-        assert!(astar.find_path(0, 0, 3, 3).is_none());
+        let path = astar.find_path(0, 0, 3, 3).unwrap();
+        assert!(!path.is_empty(), "Expected a path, got {:?}", path);
+        assert_eq!((path.first().unwrap().x, path.first().unwrap().y), (0, 0));
+        assert_eq!((path.last().unwrap().x, path.last().unwrap().y), (3, 3));
+        assert!(
+            path.iter()
+                .any(|node| [(1_u16, 0_u16), (0_u16, 1_u16)].contains(&(node.x, node.y))),
+            "Expected a straight connector from blocked start. Path: {:?}",
+            path
+        );
     }
 
     #[test]
-    fn blocked_end_node_short_circuits() {
+    fn blocked_end_node_gets_connector_path() {
         let mut astar = AStar {
             nodes: vec![],
             width: 0,
@@ -578,7 +659,60 @@ mod tests {
 
         astar.set_grid(4, 4, &[3, 3, 1, 1, 0]);
 
-        assert!(astar.find_path(0, 0, 3, 3).is_none());
+        let path = astar.find_path(0, 0, 3, 3).unwrap();
+        assert!(!path.is_empty(), "Expected a path, got {:?}", path);
+        assert_eq!((path.first().unwrap().x, path.first().unwrap().y), (0, 0));
+        assert_eq!((path.last().unwrap().x, path.last().unwrap().y), (3, 3));
+        assert!(
+            path.iter()
+                .any(|node| [(2_u16, 3_u16), (3_u16, 2_u16)].contains(&(node.x, node.y))),
+            "Expected a straight connector to blocked end. Path: {:?}",
+            path
+        );
+    }
+
+    #[test]
+    fn blocked_start_and_end_nodes_get_connector_path() {
+        let mut astar = AStar {
+            nodes: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        astar.set_grid(4, 4, &[0, 0, 1, 1, 0, 3, 3, 1, 1, 0]);
+
+        let path = astar.find_path(0, 0, 3, 3).unwrap();
+        assert!(!path.is_empty(), "Expected a path, got {:?}", path);
+        assert_eq!((path.first().unwrap().x, path.first().unwrap().y), (0, 0));
+        assert_eq!((path.last().unwrap().x, path.last().unwrap().y), (3, 3));
+    }
+
+    #[test]
+    fn blocked_node_without_straight_valid_proxy_returns_empty_path() {
+        let mut astar = AStar {
+            nodes: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        astar.set_grid(
+            3,
+            3,
+            &[
+                1, 1, 1, 1, 0, // center
+                1, 0, 1, 1, 0, // up
+                2, 1, 1, 1, 0, // right
+                1, 2, 1, 1, 0, // down
+                0, 1, 1, 1, 0, // left
+            ],
+        );
+
+        let path = astar.find_path(1, 1, 2, 2).unwrap();
+        assert!(
+            path.is_empty(),
+            "Expected empty path when no straight valid proxy exists, got {:?}",
+            path
+        );
     }
 
     #[test]
