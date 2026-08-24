@@ -1,7 +1,7 @@
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatFormField, MatInput, MatLabel } from '@angular/material/input';
+import { MatFormField, MatInput, MatLabel, MatSuffix } from '@angular/material/input';
 import { MatSlider, MatSliderThumb } from '@angular/material/slider';
 import { FlowPath, FlowPathHost, FlowPathNode, Obstacle } from '../../../flow-path/src/public-api';
 
@@ -54,6 +54,10 @@ type StrokePreset = {
     MatLabel,
     MatFormField,
     MatInput,
+    Obstacle,
+    FlowPathHost,
+    FlowPathNode,
+    MatSuffix,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -83,16 +87,16 @@ export class App {
       eyebrow: 'Intake',
       title: 'Capture request',
       description: 'Start with a draggable source card and let FlowPath anchor the route.',
-      x: 32,
-      y: 56,
+      x: 0,
+      y: 0,
       ports: [{ id: 'global-intake', side: 'right' }],
     },
     {
       eyebrow: 'Scoring',
       title: 'Prioritize work',
       description: 'Keep the main workflow legible even as blockers shift around the canvas.',
-      x: 348,
-      y: 34,
+      x: 35,
+      y: 220,
       ports: [
         { id: 'global-priority-in', side: 'left' },
         { id: 'global-priority-out', side: 'right' },
@@ -102,8 +106,8 @@ export class App {
       eyebrow: 'Review',
       title: 'Route to approval',
       description: 'The path updates live while nodes and obstacles are dragged.',
-      x: 324,
-      y: 252,
+      x: 501,
+      y: 220,
       ports: [
         { id: 'global-review-in', side: 'left' },
         { id: 'global-review-out', side: 'right' },
@@ -113,8 +117,8 @@ export class App {
       eyebrow: 'Delivery',
       title: 'Ship the outcome',
       description: 'Implicit mode works across the page with almost no setup.',
-      x: 660,
-      y: 154,
+      x: 945,
+      y: 0,
       ports: [{ id: 'global-delivery', side: 'left' }],
     },
   ];
@@ -123,22 +127,22 @@ export class App {
     {
       title: 'Compliance gate',
       description: 'Moves like any other blocker.',
-      x: 192,
-      y: 170,
+      x: 308,
+      y: 183,
       width: 150,
     },
     {
       title: 'Legacy sync',
       description: 'Forces a wider reroute.',
-      x: 530,
-      y: 72,
+      x: 647,
+      y: 4,
       width: 136,
     },
     {
       title: 'Manual approval',
       description: 'Add drag to see the route settle again.',
-      x: 510,
-      y: 282,
+      x: 787,
+      y: 200,
       width: 154,
     },
   ];
@@ -154,16 +158,16 @@ export class App {
       eyebrow: 'Planner',
       title: 'Design the route',
       description: 'Bound the canvas to a single product area.',
-      x: 28,
-      y: 56,
+      x: 8,
+      y: 10,
       ports: [{ id: 'explicit-plan', side: 'right' }],
     },
     {
       eyebrow: 'Execution',
       title: 'Coordinate services',
       description: 'Perfect for dashboards, editors, and flow-heavy modules.',
-      x: 290,
-      y: 218,
+      x: 42,
+      y: 271,
       ports: [
         { id: 'explicit-execution-in', side: 'left' },
         { id: 'explicit-execution-out', side: 'right' },
@@ -173,8 +177,8 @@ export class App {
       eyebrow: 'Insights',
       title: 'Publish the result',
       description: 'Style the active paths from the control panel.',
-      x: 612,
-      y: 82,
+      x: 512,
+      y: 331,
       ports: [{ id: 'explicit-insights', side: 'left' }],
     },
   ];
@@ -183,15 +187,15 @@ export class App {
     {
       title: 'Audit trail',
       description: 'A bounded host keeps redraw work local.',
-      x: 222,
-      y: 78,
+      x: 569,
+      y: 17,
       width: 158,
     },
     {
       title: 'Policy check',
       description: 'Move blockers to create tighter detours.',
-      x: 490,
-      y: 232,
+      x: 328,
+      y: 230,
       width: 146,
     },
   ];
