@@ -58,7 +58,7 @@ jobs:
   
     environment:
         name: github-pages
-        url: https://flow-path.wieske.io
+        url: ${{steps.deployment.outputs.page_url}}
 
     runs-on: ubuntu-latest
     needs: build
