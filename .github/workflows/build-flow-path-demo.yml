@@ -62,15 +62,12 @@ jobs:
 
     runs-on: ubuntu-latest
     needs: build
-    permissions: 
+    permissions:
+      contents: read
       pages: write
       id-token: write
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: github-pages
-          
+      
+    steps:          
       - name: Deployment to Github Pages
         id: deployment
         uses: actions/deploy-pages@v3
