@@ -1,10 +1,9 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../dist/flow-path",
-  "assets": [
-    "src/lib/flow-path/path-finders/a-star-wasm/pkg/**/*"
-  ],
+  "assets": ["src/lib/flow-path/path-finders/a-star-wasm/pkg/**/*"],
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "allowedNonPeerDependencies": ["@wieske-io/box-observer"]
 }
