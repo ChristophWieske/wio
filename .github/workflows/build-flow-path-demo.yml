@@ -48,3 +48,25 @@ jobs:
         
       - name: Build Flow Path Demo
         run: npm run build-flow-path-demo
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/flow-path-demo/browser
+
+  deployment:
+  
+    environment:
+        name: github-pages
+        url: https://flow-path.wieske.io
+
+    runs-on: ubuntu-latest
+    needs: build
+    permissions: 
+      pages: write
+      id-token: write
+    steps:
+      - name: Deployment to Github Pages
+        id: deployment
+        uses: actions/deploy-pages@3
+        
