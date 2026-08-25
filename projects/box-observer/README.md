@@ -76,6 +76,15 @@ class BoxObserver {
 - Triggering recalculation for pathfinding or collision systems
 - Building custom editor or visualization components
 
+## For the record
+
+Do I like constantly pulling elements bounding rects? Hell no. 
+
+But sometimes you need to know where things are in the DOM, and this library is a lightweight way to do it.
+It does really well with very minimal performance impact.
+
+Brace for forced layouts, though.
+
 ## License
 
 MIT

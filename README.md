@@ -1,59 +1,18 @@
 # Wio
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.1.
+Wio is a collection of libraries I wished I had during client projects but could not find available in the ecosystem in the way I needed them.  
+So I built them myself and share them publicly for others who may face similar challenges.
 
-## Development server
+This repository is also a deliberate learning and craftsmanship space: each library helps sharpen my engineering skills and expand my practical experience while solving real-world problems.
 
-To start a local development server, run:
+## What this repository contains
 
-```bash
-ng serve
-```
+- Reusable Angular-based libraries and supporting packages.
+- Demo and integration surfaces used to validate ideas in realistic scenarios.
+- Utilities and components designed from practical project needs.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Highlights
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Check out:
+- [BoxObserver](projects/box-observer/README.md) - A DOM geometry observer for tracking node positions and sizes.
+- [FlowPath](projects/flow-path/README.md) - A lightweight Angular library for drawing routed paths between DOM nodes.

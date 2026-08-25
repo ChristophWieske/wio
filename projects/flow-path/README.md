@@ -6,9 +6,7 @@ A lightweight Angular library for drawing routed paths between DOM nodes.
 
 ## Demo
 
-Live demo: https://example.com/flow-path-demo
-
-This is a placeholder until the demo page is published.
+Live demo: https://flow-path.wieske.io
 
 ## Key features
 
