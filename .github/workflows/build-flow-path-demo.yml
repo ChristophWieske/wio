@@ -68,6 +68,27 @@ jobs:
       id-token: write
       
     steps:          
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: artifact
+
+      - name: Extract artifact
+        run: |
+          cd artifact
+          tar -xf artifact.tar
+          rm artifact.tar
+          ls -la
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifact
+
       - name: Deployment to Github Pages
         id: deployment
         uses: actions/deploy-pages@v3
