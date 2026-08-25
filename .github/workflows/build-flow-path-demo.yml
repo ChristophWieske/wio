@@ -68,14 +68,7 @@ jobs:
       id-token: write
       
     steps:          
-      - name: Debug environment
-        run: |
-          echo "GITHUB_RUN_ID: ${{ github.run_id }}"
-          echo "GITHUB_WORKFLOW_ID: ${{ github.workflow_id }}"
-          echo "GITHUB_RUN_NUMBER: ${{ github.run_number }}"
-          env | grep -i github | sort
-
       - name: Deployment to Github Pages
         id: deployment
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
         
