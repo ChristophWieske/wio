@@ -33,5 +33,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+
+      - name: Build Wasm Package
+        run: |
+          cd projects/flow-path
+          npm run build-wasm
+        
       - name: Build Flow Path Demo
         run: npm run build-flow-path-demo
