@@ -1,6 +1,6 @@
 {
   "name": "@wieske-io/flow-path",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "peerDependencies": {
     "@angular/common": "^22.0.0",
     "@angular/core": "^22.0.0"
@@ -11,7 +11,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build-wasm": "wasm-pack build src/lib/flow-path/path-finders/a-star-wasm --target web --release && node src/scripts/embed-wasm.js",
-    "build": "npm run build-wasm && npm install && ng build"
+    "build-wasm": "wasm-pack build src/lib/flow-path/path-finders/a-star-wasm --target web --release && node src/scripts/embed-wasm.js && del /f /q \"src\\lib\\flow-path\\path-finders\\a-star-wasm\\pkg\\a_star_rust.d.ts\"",
+    "build": "npm run build-wasm && ng build"
   }
 }
