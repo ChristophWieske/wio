@@ -2,32 +2,6 @@ use console_error_panic_hook;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use wasm_bindgen::prelude::*;
-use web_sys::console::log;
-
-// Optimizations
-/// A weight applied to the calculated heuristic of a node.
-/// If 1 a path found will be optimal, but it costs performance.
-/// With 2 the found path might not be optimal, but it could be calculated way faster.
-const HEURISTIC_WEIGHT: u32 = 2;
-
-macro_rules! log {
-    ($($t:tt)*) => {{
-        #[cfg(target_arch = "wasm32")]
-        {
-            web_sys::console::log_1(&format!($($t)*).into());
-        }
-
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            println!($($t)*);
-        }
-    }};
-}
-
-#[cfg(target_arch = "wasm32")]
-pub fn init_panic_hook() {
-    console_error_panic_hook::set_once();
-}
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 struct GridNode {
@@ -41,10 +15,9 @@ struct Candidate {
     node_index: usize,
     parent_index: Option<usize>,
     index: usize,
-    direction: Option<(i8, i8)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 #[wasm_bindgen]
 pub struct Node {
     pub x: u16,
@@ -52,8 +25,6 @@ pub struct Node {
 }
 
 const DIRECTION_VECTORS: [(i8, i8); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
-
-const COST_FOR_TURN: u32 = 1;
 
 #[wasm_bindgen]
 #[derive(Debug)]
@@ -174,13 +145,12 @@ impl AStar {
         g_score[start_node_index] = 0;
         let mut candidates = vec![];
 
-        let h = heuristic(&start_node, &end_node, None) * HEURISTIC_WEIGHT;
+        let h = heuristic(&start_node, &end_node);
         let mut open_list = BinaryHeap::with_capacity((h as usize) * 2);
         let candidate = Candidate {
             node_index: start_node_index,
             parent_index: None,
             index: 0,
-            direction: None,
         };
         candidates.push(candidate);
         open_list.push(Reverse((h, 0, 0)));
@@ -191,7 +161,7 @@ impl AStar {
             let current = candidates[current_candidate_index];
 
             if current.node_index == end_node_index {
-                return Some(reconstruct_path(&current, &candidates, &self.nodes));
+                    return Some(reconstruct_path(&current, &candidates, &self.nodes, self.width));
             }
 
             let current_node = &self.nodes[current.node_index];
@@ -218,24 +188,18 @@ impl AStar {
                     continue;
                 }
 
-                let turn_cost = if current.direction == Some(direction) {
-                    0
-                } else {
-                    COST_FOR_TURN
-                };
-                let g = g_score[current.node_index] + next_node.weight + turn_cost;
+                let g = g_score[current.node_index] + next_node.weight;
                 if g >= g_score[next_node_index] {
                     continue;
                 }
                 g_score[next_node_index] = g;
 
-                let h = heuristic(&next_node, &end_node, Some(direction)) * HEURISTIC_WEIGHT;
+                let h = heuristic(&next_node, &end_node);
                 let next_candidate_index = candidates.len();
                 let next_candidate = Candidate {
                     node_index: next_node_index,
                     parent_index: Some(current.index),
                     index: next_candidate_index,
-                    direction: Some(direction),
                 };
                 open_list.push(Reverse((g + h, -(g as i32), next_candidate_index)));
                 candidates.push(next_candidate);
@@ -291,68 +255,186 @@ fn reconstruct_path(
     candidate: &Candidate,
     candidates: &Vec<Candidate>,
     nodes: &Vec<GridNode>,
+    width: u16,
 ) -> Vec<Node> {
-    let mut result = Vec::with_capacity(32);
+    let mut full_path = Vec::with_capacity(32);
 
     let mut current_candidate = candidate;
-    let mut latest_turn = nodes[candidate.node_index];
-
-    result.push(Node {
-        x: latest_turn.x,
-        y: latest_turn.y,
-    });
-
-    while current_candidate.parent_index.is_some() {
-        let parent_index = unsafe { current_candidate.parent_index.unwrap_unchecked() };
-        let parent = &candidates[parent_index];
-        let parent_node = nodes[parent.node_index];
-        if parent_node.x != latest_turn.x && parent_node.y != latest_turn.y {
-            let current_node = nodes[current_candidate.node_index];
-            result.push(Node {
-                x: current_node.x,
-                y: current_node.y,
-            });
-            latest_turn = current_node;
+    loop {
+        let current_node = nodes[current_candidate.node_index];
+        full_path.push(Node {
+            x: current_node.x,
+            y: current_node.y,
+        });
+        match current_candidate.parent_index {
+            Some(parent_index) => current_candidate = &candidates[parent_index],
+            None => break,
         }
-        current_candidate = parent;
     }
+    full_path.reverse();
 
-    let current_node = nodes[current_candidate.node_index];
-    result.push(Node {
-        x: current_node.x,
-        y: current_node.y,
-    });
-    result.reverse();
-    result
+    let turn_points = flatten_path(&full_path);
+    smooth_path(&turn_points, nodes, width)
 }
 
-/// Returns a simplified 2d direction vector ready to be compared against those in DIRECTION_VECTORS.
-/// Attention: The result vector is not normalized as that would be to expensive for diagonals
-/// and unneccessary because we don't have diagonal move vectors.
-/// Instead coordinates are 1, 0 or -1 only.
-fn get_direction(from: &GridNode, to: &GridNode) -> (i8, i8) {
-    (
-        (to.x as i32 - from.x as i32).signum() as i8,
-        (to.y as i32 - from.y as i32).signum() as i8,
-    )
-}
-
-fn heuristic(from: &GridNode, to: &GridNode, direction: Option<(i8, i8)>) -> u32 {
+fn heuristic(from: &GridNode, to: &GridNode) -> u32 {
     if from == to {
         return 0;
     }
 
-    let target_direction = get_direction(from, to);
-    let requires_turn = match direction {
-        Some(direction) => direction != target_direction,
-        None => DIRECTION_VECTORS
-            .iter()
-            .all(|direction| *direction != target_direction),
-    };
+    (from.x as u32).abs_diff(to.x as u32) + (from.y as u32).abs_diff(to.y as u32)
+}
 
-    return (from.x as u32).abs_diff(to.x as u32)
-        + (from.y as u32).abs_diff(to.y as u32)
-        + requires_turn as u32 * COST_FOR_TURN;
+fn flatten_path(path: &[Node]) -> Vec<Node> {
+    if path.len() <= 2 {
+        return path.to_vec();
+    }
+
+    let mut flattened = Vec::with_capacity(path.len());
+    flattened.push(Node {
+        x: path[0].x,
+        y: path[0].y,
+    });
+
+    let mut previous_direction = get_node_direction(&path[0], &path[1]);
+
+    for i in 1..(path.len() - 1) {
+        let direction = get_node_direction(&path[i], &path[i + 1]);
+        if direction != previous_direction {
+            flattened.push(Node {
+                x: path[i].x,
+                y: path[i].y,
+            });
+            previous_direction = direction;
+        }
+    }
+
+    let last = &path[path.len() - 1];
+    flattened.push(Node {
+        x: last.x,
+        y: last.y,
+    });
+    flattened
+}
+
+/// Eliminates staircase turns (dir1 → dir2 → dir1) by moving the intermediate
+/// turn-point until no more staircases can be removed without crossing blocked nodes
+/// or increasing path cost.
+fn smooth_path(turn_points: &[Node], nodes: &[GridNode], width: u16) -> Vec<Node> {
+    if turn_points.len() < 4 {
+        return turn_points.to_vec();
+    }
+
+    let mut current = turn_points.to_vec();
+    loop {
+        let (next, changed) = smooth_pass(&current, nodes, width);
+        // A smooth pass can produce collinear points at segment junctions; flatten before
+        // the next pass so staircase detection always works on a clean turn-point path.
+        current = flatten_path(&next);
+        if !changed {
+            break;
+        }
+    }
+    current
+}
+
+/// One scan over `turn_points` looking for staircase patterns (A→B→C→D where
+/// direction(A→B) == direction(C→D)). For each staircase, tries to replace the
+/// three-segment zigzag with a two-segment L-path via either corner of the bounding
+/// rectangle. Returns the updated path and whether any change was made.
+fn smooth_pass(turn_points: &[Node], nodes: &[GridNode], width: u16) -> (Vec<Node>, bool) {
+    let mut result = Vec::with_capacity(turn_points.len());
+    let mut changed = false;
+    let mut i = 0;
+
+    while i < turn_points.len() {
+        if i + 3 < turn_points.len() {
+            // Need 4 consecutive points to detect a staircase.
+            let a = turn_points[i];
+            let b = turn_points[i + 1];
+            let c = turn_points[i + 2];
+            let d = turn_points[i + 3];
+
+            let start_direction = get_node_direction(&a, &b);
+            if start_direction == get_node_direction(&c, &d) {
+                // Staircase pattern found.
+                let budget = straight_line_info(a.x, a.y, b.x, b.y, nodes, width)
+                    .unwrap_or(u32::MAX)
+                    .saturating_add(
+                        straight_line_info(b.x, b.y, c.x, c.y, nodes, width).unwrap_or(u32::MAX),
+                    )
+                    .saturating_add(
+                        straight_line_info(c.x, c.y, d.x, d.y, nodes, width).unwrap_or(u32::MAX),
+                    );
+
+                // The one candidate corner of the bounding rectangle of A and D.
+                let via_corner = if start_direction.0 != 0 {
+                    Node { x: d.x, y: a.y }
+                } else {
+                    Node { x: a.x, y: d.y }
+                };
+
+                if let Some(c1) =
+                    straight_line_info(a.x, a.y, via_corner.x, via_corner.y, nodes, width)
+                {
+                    if let Some(c2) =
+                        straight_line_info(via_corner.x, via_corner.y, d.x, d.y, nodes, width)
+                    {
+                        if c1.saturating_add(c2) <= budget {
+                            result.push(a);
+                            result.push(via_corner);
+                            // Skip A, B, C — D will be pushed on the next iteration.
+                            i += 3;
+                            changed = true;
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
+        result.push(turn_points[i]);
+        i += 1;
+    }
+
+    (result, changed)
+}
+
+/// Returns the cost of walking a straight horizontal or vertical line from `(x1,y1)` to
+/// `(x2,y2)`, excluding the start node. Returns `None` if any node along the path is blocked.
+fn straight_line_info(x1: u16, y1: u16, x2: u16, y2: u16, nodes: &[GridNode], width: u16) -> Option<u32> {
+    let mut cost = 0u32;
+    if x1 == x2 {
+        for y in y1.min(y2)..=y1.max(y2) {
+            if y == y1 {
+                continue;
+            }
+            let w = nodes[get_node_index(x1, y, width)].weight;
+            if w == 0 {
+                return None;
+            }
+            cost += w;
+        }
+    } else {
+        for x in x1.min(x2)..=x1.max(x2) {
+            if x == x1 {
+                continue;
+            }
+            let w = nodes[get_node_index(x, y1, width)].weight;
+            if w == 0 {
+                return None;
+            }
+            cost += w;
+        }
+    }
+    Some(cost)
+}
+
+fn get_node_direction(from: &Node, to: &Node) -> (i8, i8) {
+    (
+        (to.x as i32 - from.x as i32).signum() as i8,
+        (to.y as i32 - from.y as i32).signum() as i8,
+    )
 }
 
 #[wasm_bindgen]
@@ -380,8 +462,8 @@ mod tests {
             x: 1,
             y: 1,
         };
-        let result = heuristic(&start_node, &target_node, None);
-        assert_eq!(result, 3);
+        let result = heuristic(&start_node, &target_node);
+        assert_eq!(result, 2);
     }
 
     #[test]
@@ -396,8 +478,8 @@ mod tests {
             x: 1,
             y: 3,
         };
-        let result = heuristic(&start_node, &target_node, None);
-        assert_eq!(result, 5);
+        let result = heuristic(&start_node, &target_node);
+        assert_eq!(result, 4);
     }
 
     #[test]
@@ -412,7 +494,7 @@ mod tests {
             x: 1,
             y: 0,
         };
-        let result = heuristic(&start_node, &target_node, None);
+        let result = heuristic(&start_node, &target_node);
         assert_eq!(result, 1);
     }
 
@@ -428,7 +510,7 @@ mod tests {
             x: 0,
             y: 0,
         };
-        let result = heuristic(&start_node, &target_node, None);
+        let result = heuristic(&start_node, &target_node);
         assert_eq!(result, 0);
     }
 
@@ -444,10 +526,8 @@ mod tests {
             x: 1,
             y: 1,
         };
-        let current_direction = (0, 1);
-
-        let result = heuristic(&from_node, &target_node, Some(current_direction));
-        assert_eq!(result, 2);
+        let result = heuristic(&from_node, &target_node);
+        assert_eq!(result, 1);
     }
 
     #[test]
@@ -462,9 +542,8 @@ mod tests {
             x: 1,
             y: 1,
         };
-        let current_direction = (1, 0);
-        let result = heuristic(&start_node, &target_node, Some(current_direction));
-        assert_eq!(result, 2);
+        let result = heuristic(&start_node, &target_node);
+        assert_eq!(result, 1);
     }
 
     #[test]
@@ -479,9 +558,8 @@ mod tests {
             x: 1,
             y: 1,
         };
-        let current_direction = (0, 1);
-        let result = heuristic(&from_node, &target_node, Some(current_direction));
-        assert_eq!(result, 3);
+        let result = heuristic(&from_node, &target_node);
+        assert_eq!(result, 2);
     }
 
     #[test]
@@ -536,8 +614,6 @@ mod tests {
             height: 0,
         };
         let width = 4;
-        let height = 4;
-        let expected_length = 16;
         astar.set_grid(4, 4, &[1, 2, 1, 1, 3]);
         let obstacle_index = get_node_index(1, 2, width);
 
@@ -556,9 +632,6 @@ mod tests {
             height: 0,
         };
         let width = 4;
-        let height = 4;
-        let expected_length = 16;
-
         astar.set_grid(4, 4, &[3, 3, 1, 1, 0]);
         let obstacle_index = get_node_index(3, 3, width);
 
@@ -688,7 +761,7 @@ mod tests {
     }
 
     #[test]
-    fn blocked_node_without_straight_valid_proxy_returns_empty_path() {
+    fn blocked_node_without_straight_valid_proxy_returns_none() {
         let mut astar = AStar {
             nodes: vec![],
             width: 0,
@@ -707,12 +780,8 @@ mod tests {
             ],
         );
 
-        let path = astar.find_path(1, 1, 2, 2).unwrap();
-        assert!(
-            path.is_empty(),
-            "Expected empty path when no straight valid proxy exists, got {:?}",
-            path
-        );
+        let path = astar.find_path(1, 1, 2, 2);
+        assert!(path.is_none(), "Expected no path when no straight valid proxy exists");
     }
 
     #[test]

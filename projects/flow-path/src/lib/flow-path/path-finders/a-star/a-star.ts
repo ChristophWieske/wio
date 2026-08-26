@@ -39,7 +39,6 @@ const DIRECTION_VECTORS = [
   [0, 1],
   [-1, 0],
 ];
-const COSTS_FOR_TURN = 10;
 
 export class AStar implements PathFinder {
   runId = 0;
@@ -100,7 +99,7 @@ export class AStar implements PathFinder {
       const current = openList.pop()!;
 
       if (current === endNode) {
-        return reconstructPath(current);
+        return reconstructPath(current, this.grid);
       }
 
       for (const [dx, dy] of DIRECTION_VECTORS) {
@@ -119,7 +118,7 @@ export class AStar implements PathFinder {
           continue;
         }
 
-        const g = current.g! + nextNode.weight + costForDirectionChange(nextNode, current);
+        const g = current.g! + nextNode.weight;
         const h = heuristic(nextNode, endNode);
         const f = g + h;
 
@@ -163,46 +162,163 @@ export class AStar implements PathFinder {
   }
 }
 
-function costForDirectionChange(node: GridNode, potentialParent: GridNode): number {
-  const grandfather = potentialParent.parent;
-  if (!grandfather) {
-    return 0;
-  }
-
-  if (grandfather.x === node.x) {
-    return 0;
-  }
-
-  if (grandfather.y === node.y) {
-    return 0;
-  }
-
-  return COSTS_FOR_TURN;
-}
-
 function heuristic(from: GridNode, to: GridNode): number {
-  // If the nodes are not on the same x or y coordinate it will take the path at least one turn to get to the target.
-  // As turns are weighted in this opinionated astar algorithm we add that to the heuristics as well.
-  const turnCosts = from.x !== to.x && from.y !== to.y ? COSTS_FOR_TURN : 0;
-  return Math.abs(from.x - to.x) + Math.abs(from.y - to.y) + turnCosts;
+  return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
 }
 
-function reconstructPath(node: GridNode): { x: number; y: number }[] {
-  const nodes: { x: number; y: number }[] = [{ x: node.x, y: node.y }];
-
+function reconstructPath(node: GridNode, grid: GridNode[][]): { x: number; y: number }[] {
+  const fullPath: { x: number; y: number }[] = [];
   let currentNode: GridNode | undefined = node;
-  let latestTurn: GridNode = node;
   while (currentNode) {
-    const parent: GridNode | undefined = currentNode?.parent;
-    if (!parent) {
-      nodes.push({ x: currentNode.x, y: currentNode.y });
-    } else if (parent.x !== latestTurn.x && parent.y !== latestTurn.y) {
-      nodes.push({ x: parent.x, y: parent.y });
-      latestTurn = parent;
+    fullPath.push({ x: currentNode.x, y: currentNode.y });
+    currentNode = currentNode.parent;
+  }
+  fullPath.reverse();
+
+  return smoothPath(flattenPath(fullPath), grid);
+}
+
+function flattenPath(path: { x: number; y: number }[]): { x: number; y: number }[] {
+  if (path.length <= 2) {
+    return path;
+  }
+
+  const flattened = [path[0]];
+  let previousDirection = getDirection(path[0], path[1]);
+  for (let i = 1; i < path.length - 1; i++) {
+    const direction = getDirection(path[i], path[i + 1]);
+    if (direction.x !== previousDirection.x || direction.y !== previousDirection.y) {
+      flattened.push(path[i]);
+      previousDirection = direction;
+    }
+  }
+  flattened.push(path[path.length - 1]);
+
+  return flattened;
+}
+
+/**
+ * Eliminates staircase turns (dir1 → dir2 → dir1) by moving the intermediate
+ * turn-point until no more staircases can be removed without crossing blocked nodes
+ * or increasing path cost.
+ */
+function smoothPath(
+  turnPoints: { x: number; y: number }[],
+  grid: GridNode[][],
+): { x: number; y: number }[] {
+  if (turnPoints.length < 4) return turnPoints;
+
+  let current = turnPoints;
+  let changed = true;
+  while (changed) {
+    let next: { x: number; y: number }[];
+    [next, changed] = smoothPass(current, grid);
+    // A smooth pass can produce collinear points at segment junctions; flatten before
+    // the next pass so staircase detection always works on a clean turn-point path.
+    current = flattenPath(next);
+  }
+  return current;
+}
+
+/**
+ * One scan over `turnPoints` looking for staircase patterns (A→B→C→D where
+ * direction(A→B) == direction(C→D)). For each staircase, tries to replace the
+ * three-segment zigzag with a two-segment L-path via either corner of the bounding
+ * rectangle of A and D.
+ */
+function smoothPass(
+  turnPoints: { x: number; y: number }[],
+  grid: GridNode[][],
+): [{ x: number; y: number }[], boolean] {
+  const result: { x: number; y: number }[] = [];
+  let changed = false;
+  let i = 0;
+
+  while (i < turnPoints.length) {
+    if (i + 3 < turnPoints.length) {
+      const a = turnPoints[i];
+      const b = turnPoints[i + 1];
+      const c = turnPoints[i + 2];
+      const d = turnPoints[i + 3];
+
+      const dirAB = getDirection(a, b);
+      const dirCD = getDirection(c, d);
+
+      if (dirAB.x === dirCD.x && dirAB.y === dirCD.y) {
+        // Staircase pattern found.
+        const costAB = straightLineCost(a.x, a.y, b.x, b.y, grid) ?? Infinity;
+        const costBC = straightLineCost(b.x, b.y, c.x, c.y, grid) ?? Infinity;
+        const costCD = straightLineCost(c.x, c.y, d.x, d.y, grid) ?? Infinity;
+        const budget = costAB + costBC + costCD;
+
+        // The two candidate corners of the bounding rectangle of A and D.
+        const corners = [
+          { x: a.x, y: d.y },
+          { x: d.x, y: a.y },
+        ];
+
+        let resolved = false;
+        for (const via of corners) {
+          const c1 = straightLineCost(a.x, a.y, via.x, via.y, grid);
+          const c2 = straightLineCost(via.x, via.y, d.x, d.y, grid);
+          if (c1 !== null && c2 !== null && c1 + c2 <= budget) {
+            result.push(a);
+            result.push(via);
+            // Skip A, B, C — D will be pushed on the next iteration.
+            i += 3;
+            changed = true;
+            resolved = true;
+            break;
+          }
+        }
+        if (resolved) continue;
+      }
     }
 
-    currentNode = parent;
+    result.push(turnPoints[i]);
+    i++;
   }
 
-  return nodes;
+  return [result, changed];
+}
+
+/**
+ * Returns the cost of traversing a straight horizontal or vertical line from `(x1,y1)` to
+ * `(x2,y2)`, excluding the start node. Returns null if any node along the path is blocked.
+ */
+function straightLineCost(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  grid: GridNode[][],
+): number | null {
+  let cost = 0;
+  if (x1 === x2) {
+    const yMin = Math.min(y1, y2);
+    const yMax = Math.max(y1, y2);
+    for (let y = yMin; y <= yMax; y++) {
+      if (y === y1) continue;
+      const node = grid[x1]?.[y];
+      if (!node || node.weight === 0) return null;
+      cost += node.weight;
+    }
+  } else {
+    const xMin = Math.min(x1, x2);
+    const xMax = Math.max(x1, x2);
+    for (let x = xMin; x <= xMax; x++) {
+      if (x === x1) continue;
+      const node = grid[x]?.[y1];
+      if (!node || node.weight === 0) return null;
+      cost += node.weight;
+    }
+  }
+  return cost;
+}
+
+function getDirection(from: { x: number; y: number }, to: { x: number; y: number }): { x: number; y: number } {
+  return {
+    x: Math.sign(to.x - from.x),
+    y: Math.sign(to.y - from.y),
+  };
 }
