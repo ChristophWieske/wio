@@ -42,6 +42,8 @@ Use the global host when you want a simple fullscreen overlay with minimal setup
 ```html
 <wio-flow-path-node id="start" />
 <wio-flow-path-node id="end" />
+<!-- optional obstacle - will be avoided by the flow path -->
+<div class="obstacle" wioObstacle [brimWidth]="10"></div>
 <wio-flow-path [positions]="['start', 'end']" />
 ```
 
@@ -53,6 +55,8 @@ Use a bounded host when the path overlay should be constrained to a specific par
 <wio-flow-path-host>
   <wio-flow-path-node id="start" />
   <wio-flow-path-node id="end" />
+  <!-- optional obstacle - will be avoided by the flow path -->
+  <div class="obstacle" wioObstacle [brimWidth]="10"></div> 
   <wio-flow-path [positions]="['start', 'end']" />
 </wio-flow-path-host>
 ```
@@ -67,10 +71,6 @@ The package exports the following public API:
 - `FlowPath`
 - `FlowPathNode`
 - `Obstacle`
-
-## Notes
-
-This library is intended for interactive visualization and layout-driven experiences. For best results, keep the node host and path overlay in sync with the underlying UI state so the pathfinder can respond to layout changes efficiently.
 
 ## License
 

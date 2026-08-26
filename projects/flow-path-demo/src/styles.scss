@@ -108,7 +108,8 @@ body {
 .hero__lead,
 .section-heading p,
 .capability-card p,
-.demo-card p {
+.demo-card p,
+.install-card p {
   color: var(--mat-sys-on-surface-variant);
 }
 
@@ -127,9 +128,47 @@ body {
 
 .hero__chips,
 .capabilities,
-.preset-list {
+.preset-list,
+.install-card {
   display: grid;
   gap: 0.75rem;
+}
+
+.install-card {
+  padding: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  background: rgba(255, 255, 255, 0.7);
+  grid-row: 2;
+}
+
+.install-card h2,
+.install-card pre {
+  margin: 0;
+}
+
+.install-card a {
+  color: #3730a3;
+  font-weight: 700;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.16em;
+}
+
+.install-card code,
+.install-card__command {
+  font-family:
+    'Cascadia Code',
+    Consolas,
+    'Courier New',
+    monospace;
+}
+
+.install-card__command {
+  overflow-x: auto;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: #f7f7f7;
+  font-size: 0.95rem;
 }
 
 .hero__chips {
