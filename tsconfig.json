@@ -4,10 +4,6 @@
   "compileOnSave": false,
   "compilerOptions": {
     "noImplicitOverride": true,
-    "paths": {
-      "@wieske-io/flow-path": ["./projects/flow-path/src/public-api.ts"],
-      "@wieske-io/box-observer": ["./projects/box-observer/src/public-api.ts"]
-    },
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,

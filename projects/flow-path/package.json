@@ -12,6 +12,6 @@
   "sideEffects": false,
   "scripts": {
     "build-wasm": "node src/scripts/build-wasm.js",
-    "build": "npm run build-wasm && ng build"
+    "build": "npm run build-wasm && node src/scripts/build.js"
   }
 }

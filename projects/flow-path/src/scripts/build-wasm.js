@@ -31,13 +31,3 @@ export default wasmBytes;
 
 fs.writeFileSync(output, content, 'utf8');
 console.log(`Embedded WASM written to ${output}`);
-
-const dtsFile = path.resolve(
-  __dirname,
-  '../lib/flow-path/path-finders/a-star-wasm/pkg/a_star_rust.d.ts',
-);
-
-if (fs.existsSync(dtsFile)) {
-  fs.unlinkSync(dtsFile);
-  console.log(`Deleted ${dtsFile}`);
-}
